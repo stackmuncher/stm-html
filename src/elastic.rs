@@ -1,0 +1,102 @@
+use elasticsearch::{http::transport::Transport, Elasticsearch, SearchParts, CountParts};
+use serde_json::Value;
+use tracing::error;
+
+pub const SEARCH_TOP_KEYWORDS: &str = r#"{"size":0,"aggs":{"refs":{"terms":{"field":"report.tech.refs.k.keyword","exclude":"System.*|TargetFrame.*","size":200},"aggs":{"total":{"sum":{"field":"report.tech.refs.c"}},"sort":{"bucket_sort":{"sort":["_key"]}}}}}}"#;
+pub const SEARCH_TOTAL_HIREABLE: &str = r#"{"size":0,"aggregations":{"total_hireable":{"terms":{"field":"hireable"}}}}"#;
+pub const SEARCH_TOP_USERS: &str = r#"{"size":10,"query":{"match_all":{}},"sort":[{"report.timestamp":{"order":"desc"}}]}"#;
+pub const USER_IDX: &str = "users";
+
+/// Run a search with the provided query
+pub(crate) async fn search(es_url: &String, query: &str) -> Result<Value, ()> {
+    let transport = match Transport::single_node(es_url) {
+        Err(e) => {
+            error!("Transport level error: {}", e);
+            return Err(());
+        }
+        Ok(v) => v,
+    };
+    let es_client = Elasticsearch::new(transport);
+    let query: Value = serde_json::from_str(query).expect("Failed to JSONify query");
+
+    let response = match es_client
+        .search(SearchParts::Index(&[USER_IDX]))
+        .body(query)
+        .send()
+        .await
+    {
+        Err(e) => {
+            error!("Send error: {}", e);
+            return Err(());
+        }
+        Ok(v) => v,
+    };
+
+    if !response.status_code().is_success() {
+        error!(
+            "ES QUERY failed. {}",
+            response.error_for_status_code_ref().unwrap_err()
+        );
+
+        // log a more detailed error message
+        if let Ok(r) = response.text().await {
+            error!("{}", r);
+        }
+
+        return Err(());
+    }
+
+    let resp = response
+        .text()
+        .await
+        .expect("Failed to got ES response body");
+    let resp: Value = serde_json::from_str(&resp).expect("Failed to serialize ES response body");
+
+    Ok(resp)
+}
+
+/// Count number of docs in the index
+pub(crate) async fn count(es_url: &String) -> Result<Value, ()> {
+    let transport = match Transport::single_node(es_url) {
+        Err(e) => {
+            error!("Transport level error: {}", e);
+            return Err(());
+        }
+        Ok(v) => v,
+    };
+    let es_client = Elasticsearch::new(transport);
+
+    let response = match es_client
+        .count(CountParts::Index(&[USER_IDX]))
+        .send()
+        .await
+    {
+        Err(e) => {
+            error!("Send error: {}", e);
+            return Err(());
+        }
+        Ok(v) => v,
+    };
+
+    if !response.status_code().is_success() {
+        error!(
+            "ES QUERY failed. {}",
+            response.error_for_status_code_ref().unwrap_err()
+        );
+
+        // log a more detailed error message
+        if let Ok(r) = response.text().await {
+            error!("{}", r);
+        }
+
+        return Err(());
+    }
+
+    let resp = response
+        .text()
+        .await
+        .expect("Failed to got ES response body");
+    let resp: Value = serde_json::from_str(&resp).expect("Failed to serialize ES response body");
+
+    Ok(resp)
+}
