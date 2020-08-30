@@ -12,9 +12,6 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
 
-  <meta name="theme-color" content="#563d7c">
-
-
   <style>
     .bd-placeholder-img {
       font-size: 1.125rem;
@@ -72,17 +69,33 @@
   <div class="container">
 
     <h1>Technology Stack Analysis</h1>
-    <p class="lead">Software engineers: <code>{{total_count.count}}</code></p>
-    <p class="lead">Hireable: <code>{{hireable_count.aggregations.total_hireable.buckets[0].doc_count}}</code></p>
+
+    <p class="lead">
+      <button type="button" class="btn btn-secondary mt-1 mt-md-0">
+        Software engineers <span class="badge badge-light">{{total_count.count}}</span>
+      </button>
+      <button type="button" class="btn btn-info mt-1 mt-md-0">
+        Open to work <span
+          class="badge badge-light">{{hireable_count.aggregations.total_hireable.buckets[0].doc_count}}</span>
+      </button>
+      <button type="button" class="btn btn-secondary mt-1 mt-md-0">
+        Projects <span class="badge badge-light">{{reports_count.aggregations.total_reports.value}}</span>
+      </button>
+      <button type="button" class="btn btn-secondary mt-1 mt-md-0">
+        Stack size <span class="badge badge-light">{{stack_size.aggregations.stack_size.value}}</span>
+      </button>
+    </p>
 
     <main role="main">
-    
-      <div class="album py-5 bg-light">
-        <div class="container">
-    
-          <div class="card shadow-sm mb-5">
-            <div class="d-flex justify-content-between align-items-center" width="100%" height="50"><h3>Libraries</h3></div>
+
+      <div class="album py-md-3">
+        <div class="container p-0">
+
+          <div class="card mb-5">
             <div class="card-body">
+              <div class="card-title">
+                <h3>Popular Keywords</h3>
+              </div>
               {% for ref in top_keywords.aggregations.refs.buckets %}
               <a class="card-text px-3 ma-3" title="{{ref.doc_count}}/{{ref.total.value}}">{{ref.key}}</a>
               {% endfor %}
@@ -92,29 +105,55 @@
           <div class="row">
             {% for user in user_list.hits.hits %}
             <div class="col-md-4">
-              <div class="card mb-4 shadow-sm">
-                <div class="d-flex justify-content-between align-items-center" width="100%" height="50"><h3 class="ma-1 px-3">{{user._source.login}}</h3></div>
+              <div class="card mb-4">
                 <div class="card-body">
-                  <p class="card-text">Name: {{user._source.name}}</p>
-                  <p class="card-text">Public Repos: {{user._source.public_repos}}</p>
+                  <div class="d-flex justify-content-between align-items-center" width="100%" height="50">
+                    <h5 class="card-title ma-1"><a href="./{{user._source.node_id}}">{% if user._source.name %}
+                        {{user._source.name}}
+                        {% else %}
+                        Anonymous Engineer
+                        {% endif %}
+                      </a>
+                    </h5>
+                  </div>
+                  {% set init = user._source.report.date_init | date(format="%Y") | int() %}
+                  {% set today = now() | date(format="%Y")  | int() %}
+                  <p class="card-subtitle mb-2 text-muted">{{user._source.public_repos}} projects over
+                    {{ today - init + 1}}+ years</p>
                   <table class="table">
                     <thead>
                       <tr>
-                        <th scope="col">Tech</th>
+                        <th scope="col"></th>
                         <th scope="col">Files</th>
-                        <th scope="col">Code lines</th>
+                        <th scope="col">Lines of code</th>
                       </tr>
                     </thead>
                     <tbody>
                       {% for tech in user._source.report.tech %}
+                      {% if tech.name!=".\.csproj$" %}
                       <tr>
                         <th scope="row">{{tech.language}}</th>
                         <td>{{tech.files}}</td>
                         <td>{{tech.code_lines}}</td>
                       </tr>
+                      {% endif %}
                       {% endfor %}
                     </tbody>
                   </table>
+                  {% for tech in user._source.report.tech %}
+                  {% if tech.name==".\.cs$" %}
+                  {% for ref in tech.refs_kw | slice(end=15) | sort(attribute="k")  %}
+                  <span
+                    class="text-monospace px-2 ma-3 .text-nowrap text-muted"><small><strong>{{ref.k}}</strong>:{{ref.c}}</small></span>
+                  {% endfor %}
+                  <span class="text-monospace px-2 ma-3 .text-nowrap text-muted">
+                    <small>
+                      <strong>...</strong>
+                    </small>
+                  </span>
+                  {% endif %}
+                  {% endfor %}
+                  
                 </div>
               </div>
             </div>
@@ -122,7 +161,7 @@
           </div>
         </div>
       </div>
-    
+
     </main>
 
 

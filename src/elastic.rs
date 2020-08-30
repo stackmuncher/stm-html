@@ -1,10 +1,15 @@
-use elasticsearch::{http::transport::Transport, Elasticsearch, SearchParts, CountParts};
+use elasticsearch::{http::transport::Transport, CountParts, Elasticsearch, SearchParts};
 use serde_json::Value;
 use tracing::error;
 
-pub const SEARCH_TOP_KEYWORDS: &str = r#"{"size":0,"aggs":{"refs":{"terms":{"field":"report.tech.refs.k.keyword","exclude":"System.*|TargetFrame.*","size":200},"aggs":{"total":{"sum":{"field":"report.tech.refs.c"}},"sort":{"bucket_sort":{"sort":["_key"]}}}}}}"#;
-pub const SEARCH_TOTAL_HIREABLE: &str = r#"{"size":0,"aggregations":{"total_hireable":{"terms":{"field":"hireable"}}}}"#;
-pub const SEARCH_TOP_USERS: &str = r#"{"size":10,"query":{"match_all":{}},"sort":[{"report.timestamp":{"order":"desc"}}]}"#;
+pub const SEARCH_TOP_KEYWORDS: &str = r#"{"size":0,"aggs":{"refs":{"terms":{"field":"report.tech.refs_kw.k.keyword","exclude": ["System","TargetFramework","Microsoft","Text","0","1","2"],"size":100},"aggs":{"total":{"sum":{"field":"report.tech.refs_kw.c"}},"sort":{"bucket_sort":{"sort":["_key"]}}}}}}"#;
+pub const SEARCH_TOTAL_HIREABLE: &str =
+    r#"{"size":0,"aggregations":{"total_hireable":{"terms":{"field":"hireable"}}}}"#;
+pub const SEARCH_TOP_USERS: &str =
+    r#"{"size":12,"query":{"match_all":{}},"sort":[{"report.timestamp":{"order":"desc"}}]}"#;
+pub const SEARCH_TOTAL_REPORTS: &str = r#"{"size":0,"aggs":{"total_reports":{"cardinality":{"field":"report.reports_included.keyword"}}}}"#;
+pub const SEARCH_TOTAL_TECHS: &str =
+    r#"{"size":0,"aggs":{"stack_size":{"cardinality":{"field":"report.tech.language.keyword"}}}}"#;
 pub const USER_IDX: &str = "users";
 
 /// Run a search with the provided query
@@ -66,11 +71,7 @@ pub(crate) async fn count(es_url: &String) -> Result<Value, ()> {
     };
     let es_client = Elasticsearch::new(transport);
 
-    let response = match es_client
-        .count(CountParts::Index(&[USER_IDX]))
-        .send()
-        .await
-    {
+    let response = match es_client.count(CountParts::Index(&[USER_IDX])).send().await {
         Err(e) => {
             error!("Send error: {}", e);
             return Err(());

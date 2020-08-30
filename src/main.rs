@@ -5,9 +5,9 @@ use serde::Deserialize;
 use serde_json::Value;
 use tracing::info;
 
+mod elastic;
 mod handler;
 mod html;
-mod elastic;
 
 pub(crate) type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 

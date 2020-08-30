@@ -24,7 +24,6 @@ pub(crate) async fn my_handler(_event: Value, _ctx: Context) -> Result<Value, Er
 
     let es_url = std::env::var("STACK_MUNCHER_ES_URL").expect("Missing STACK_MUNCHER_ES_URL");
 
-
     let tera = match Tera::new("templates/*.html") {
         Ok(t) => t,
         Err(e) => {

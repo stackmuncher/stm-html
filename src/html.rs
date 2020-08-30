@@ -7,6 +7,8 @@ use tera::{Context, Tera};
 struct DataHome {
     total_count: Value,
     hireable_count: Value,
+    stack_size: Value,
+    reports_count: Value,
     top_keywords: Value,
     user_list: Value,
 }
@@ -14,12 +16,16 @@ struct DataHome {
 pub(crate) async fn html(tera: &Tera, es_url: String) -> Result<String, ()> {
     let total_count: Value = elastic::count(&es_url).await?;
     let hireable_count: Value = elastic::search(&es_url, elastic::SEARCH_TOTAL_HIREABLE).await?;
+    let stack_size: Value = elastic::search(&es_url, elastic::SEARCH_TOTAL_TECHS).await?;
+    let reports_count: Value = elastic::search(&es_url, elastic::SEARCH_TOTAL_REPORTS).await?;
     let top_keywords: Value = elastic::search(&es_url, elastic::SEARCH_TOP_KEYWORDS).await?;
     let user_list: Value = elastic::search(&es_url, elastic::SEARCH_TOP_USERS).await?;
 
     let data_home = DataHome {
         total_count,
         hireable_count,
+        stack_size,
+        reports_count,
         top_keywords,
         user_list,
     };
@@ -28,7 +34,6 @@ pub(crate) async fn html(tera: &Tera, es_url: String) -> Result<String, ()> {
 
     //println!("{}", data_home);
     // panic!();
-
 
     let html = tera
         .render(
