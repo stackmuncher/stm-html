@@ -13,6 +13,7 @@ struct DataHome {
     user_list: Value,
 }
 
+/// Returns the default home page
 pub(crate) async fn html(tera: &Tera, es_url: String) -> Result<String, ()> {
     let total_count: Value = elastic::count(&es_url).await?;
     let hireable_count: Value = elastic::search(&es_url, elastic::SEARCH_TOTAL_HIREABLE).await?;

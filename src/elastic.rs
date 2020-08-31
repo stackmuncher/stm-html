@@ -11,6 +11,7 @@ pub const SEARCH_TOTAL_REPORTS: &str = r#"{"size":0,"aggs":{"total_reports":{"ca
 pub const SEARCH_TOTAL_TECHS: &str =
     r#"{"size":0,"aggs":{"stack_size":{"cardinality":{"field":"report.tech.language.keyword"}}}}"#;
 pub const USER_IDX: &str = "users";
+pub const SEARCH_ENGINEER_BY_LOGIN: &str = r#"{"query":{"term":{"login.keyword":{"value":"%"}}}}"#;
 
 /// Run a search with the provided query
 pub(crate) async fn search(es_url: &String, query: &str) -> Result<Value, ()> {
@@ -100,4 +101,19 @@ pub(crate) async fn count(es_url: &String) -> Result<Value, ()> {
     let resp: Value = serde_json::from_str(&resp).expect("Failed to serialize ES response body");
 
     Ok(resp)
+}
+
+/// Inserts a single param in the ES query
+pub(crate) fn add_param(query: &str, param: String) -> String {
+    let (left, right) = query.split_at(query.find("%").expect("Cannot split the query"));
+
+    [left, param.as_str(), &right[1..]].concat().to_string()
+}
+
+#[test]
+fn add_param_test() {
+    assert_eq!(
+        add_param("Hello %!", "world".to_string()),
+        "Hello world!".to_string()
+    );
 }
