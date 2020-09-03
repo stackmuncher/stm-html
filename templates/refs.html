@@ -68,23 +68,7 @@
 <body class="py-4">
   <div class="container">
 
-    <h1>Technology Stack Analysis</h1>
-
-    <p class="lead">
-      <button type="button" class="btn btn-secondary mt-1 mt-md-0">
-        Software engineers <span class="badge badge-light">{{total_count.count}}</span>
-      </button>
-      <button type="button" class="btn btn-info mt-1 mt-md-0">
-        Open to work <span
-          class="badge badge-light">{{hireable_count.aggregations.total_hireable.buckets[0].doc_count}}</span>
-      </button>
-      <button type="button" class="btn btn-secondary mt-1 mt-md-0">
-        Projects <span class="badge badge-light">{{reports_count.aggregations.total_reports.value}}</span>
-      </button>
-      <button type="button" class="btn btn-secondary mt-1 mt-md-0">
-        Stack size <span class="badge badge-light">{{stack_size.aggregations.stack_size.value}}</span>
-      </button>
-    </p>
+    <h1>Technology Stack Analysis for {{keyword}}</h1>
 
     <main role="main">
 
@@ -96,18 +80,15 @@
               <div class="card-title">
                 <h3>Popular Keywords</h3>
               </div>
-              {% for ref in top_keywords %}
-              <a class="card-text px-3 ma-3" title="Used {{ref.c}} times"
-                href="/_kw/{{ref.k}}">{{ref.k}}</a>
+              {% for ref in refs.aggregations.refs.buckets %}
+              <a class="card-text px-3 ma-3" title="{{ref.doc_count}}"
+                href="/_ref/{{ref.key}}">{{ref.key}}</a>
               {% endfor %}
             </div>
           </div>
 
-
-          <h3>Engineers at work right now</h3>
-
           <div class="row">
-            {% for user in user_list.hits.hits %}
+            {% for user in engineers.hits.hits %}
             <div class="col-md-4">
               <div class="card mb-4">
                 <div class="card-body">
@@ -129,24 +110,34 @@
                       <tr>
                         <th scope="col"></th>
                         <th scope="col">Files</th>
-                        <th scope="col">Lines</th>
-                        <th scope="col">Packages</th>
+                        <th scope="col">Lines of code</th>
                       </tr>
                     </thead>
                     <tbody>
                       {% for tech in user._source.report.tech %}
                       {% if tech.name!=".\.csproj$" %}
                       <tr>
-                        <td scope="row">{{tech.language}}</th>
+                        <th scope="row">{{tech.language}}</th>
                         <td>{{tech.files}}</td>
                         <td>{{tech.code_lines}}</td>
-                        <td>{% if tech.refs_kw is iterable %}{{tech.refs_kw | length}}{% endif %}</td>
                       </tr>
                       {% endif %}
                       {% endfor %}
                     </tbody>
                   </table>
-                  
+                  {% for tech in user._source.report.tech %}
+                  {% if tech.name==".\.cs$" %}
+                  {% for ref in tech.refs_kw | slice(end=15) | sort(attribute="k")  %}
+                  <span
+                    class="text-monospace px-2 ma-3 .text-nowrap text-muted"><small><strong>{{ref.k}}</strong>:{{ref.c}}</small></span>
+                  {% endfor %}
+                  <span class="text-monospace px-2 ma-3 .text-nowrap text-muted">
+                    <small>
+                      <strong>...</strong>
+                    </small>
+                  </span>
+                  {% endif %}
+                  {% endfor %}
 
                 </div>
               </div>
