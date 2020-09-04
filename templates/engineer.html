@@ -31,8 +31,10 @@
           {% endif %}
           <li class="mb-1"><strong>Github</strong>: <a href="https://github.com/{{user.login}}">{{user.login}}</a></li>
           {% if user.blog %}
-          <li class="mb-1"><strong>Website</strong>: <a class="text-truncate"
-              href="https://github.com/{{user.blog}}">{{user.blog}}</a></li>
+          <li class="mb-1">
+            <div class="text-truncate"><strong>Website</strong>: <a class="text-truncate"
+                href="https://github.com/{{user.blog}}">{{user.blog}}</a></div>
+          </li>
           {% endif %}
           {% if user.email %}
           <li class="mb-1"><strong>Email</strong>: {{user.email}}</li>
@@ -43,7 +45,7 @@
           <li class="mb-1"><strong>Code history</strong>: {% if today == init %}
             &lt; 1 year
             {% else %}
-            {{ today - init }} years
+            {{ today - init + 1 }} years
             {% endif %}
           </li>
         </ul>
@@ -51,7 +53,7 @@
       </div>
       <div class="col-md-9">
         <div class="table-responsive">
-          <table class="table my-4">
+          <table class="table mt-4">
             <thead>
               <tr>
                 <th scope="col">Language</th>
@@ -66,7 +68,7 @@
             <tbody>
               {% for tech in user.report.tech | sort(attribute="language") | sort(attribute="name") %}
               <tr>
-                <td scope="row"><strong>{{tech.language}}</strong></th>
+                <td scope="row"><strong>{{tech.language}}</strong></td>
                 <td>{{tech.name | replace(from="$", to="") | replace(from=".\", to="")}}</td>
                 <td>{{tech.files}}</td>
                 <td>{{tech.code_lines}}</td>
@@ -79,81 +81,61 @@
           </table>
         </div>
 
-        <div class="card" style="border:none">
-          <div class="card-body">
-            <h5 class="card-title ma-1">
-              <h3>Projects</h3>
-            </h5>
-            <ul class="list-inline">
-              {% for proj in user.report.reports_included | sort %}
-              {% set len = proj | length | int() %}
-              <li class="pr-4 .text-nowrap list-inline-item">
-                {% set pname = proj | truncate(length=len-23, end="") | replace(from=user.report.user_name, to="") | replace(from="/", to="") %}
-                <a href="https://github.com/{{user.login}}/{{pname}}">{{pname}}</a>
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
+        <h3 class="mt-4">Projects</h3>
+        <ul class="list-inline">
+          {% for proj in user.report.reports_included | sort %}
+          {% set len = proj | length | int() %}
+          <li class="pr-4 .text-nowrap list-inline-item">
+            {% set pname = proj | truncate(length=len-23, end="") | replace(from=user.report.user_name, to="") | replace(from="/", to="") %}
+            <a href="https://github.com/{{user.login}}/{{pname}}">{{pname}}</a>
+          </li>
+          {% endfor %}
+        </ul>
 
         {% for tech in user.report.tech %}
         {% if tech.name==".\.cs$" %}
-        {% set col = tech.refs | length / 3 | int() %}
-        <div class="card" style="border:none">
-          <div class="card-body">
-            <h5 class="card-title ma-1">
-              <h3>Libraries</h3>
-            </h5>
-            <div class="row">
+        {% set col = tech.refs | length / 2 | int() %}
+        <h3 class="mt-4">Libraries</h3>
+        <div class="row">
 
-              <div class="col-md-4">
-                <ul class="pl-3">
-                  {% for ref in tech.refs | sort(attribute="k") | slice(start=0, end=col+1)  %}
-                  <li class="px-2 .text-nowrap">
-                    <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>: <small>{{ref.c}}</small></li>
-                  {% endfor %}
-                </ul>
-              </div>
-
-              <div class="col-md-4">
-                <ul>
-                  {% for ref in tech.refs | sort(attribute="k") | slice(start=col+1, end=col*2+1)  %}
-                  <li class="px-2 .text-nowrap">
-                    <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>: <small>{{ref.c}}</small></li>
-                  {% endfor %}
-                </ul>
-              </div>
-
-              <div class="col-md-4">
-                <ul>
-                  {% for ref in tech.refs | sort(attribute="k") | slice(start=col*2+1)  %}
-                  <li class="px-2 ma-3 .text-nowrap text-muted">
-                    <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>: <small>{{ref.c}}</small></li>
-                  {% endfor %}
-                </ul>
-              </div>
-
-            </div>
+          <div class="col-lg-5">
+            <dl class="row mb-0">
+              {% for ref in tech.refs | sort(attribute="k") | slice(start=0, end=col+1)  %}
+              <dt class="col-11 text-truncate">
+                <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>
+              </dt>
+              <dd class="col-1 text-right">
+                <small>{{ref.c}}</small>
+              </dd>
+              {% endfor %}
+            </dl>
           </div>
+
+          <div class="col-lg-5">
+            <dl class="row mb-0">
+              {% for ref in tech.refs | sort(attribute="k") | slice(start=col+1)  %}
+              <dt class="col-11 text-truncate">
+                <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>
+              </dt>
+              <dd class="col-1 text-right">
+                <small>{{ref.c}}</small>
+              </dd>
+              {% endfor %}
+            </dl>
+          </div>
+          <div class="col-lg-2 d-none d-lg-block">&nbsp;</div>
         </div>
         {% endif %}
         {% endfor %}
 
-
         {% if user.report.unknown_file_types | length > 0 %}
-        <div class="card" style="border:none">
-          <div class="card-body">
-            <h5 class="card-title ma-1">
-              <h3>Other files</h3>
-            </h5>
-            <ul class="list-inline">
-              {% for ftype in user.report.unknown_file_types | sort(attribute="k") %}
-              <li class="pr-4 .text-nowrap text-muted list-inline-item">
-                {{ftype.k}}: <small>{{ftype.c}}</small></li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
+        <h3 class="mt-4">Other files</h3>
+        <ul class="list-inline">
+          {% for ftype in user.report.unknown_file_types | sort(attribute="k") %}
+          <li class="pr-4 .text-nowrap text-muted list-inline-item">
+            {{ftype.k}}: <small>{{ftype.c}}</small></li>
+          {% endfor %}
+        </ul>
         {% endif %}
 
         {% endfor %}

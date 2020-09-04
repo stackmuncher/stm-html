@@ -11,7 +11,8 @@
         <h1><small>Technology Stack Analysis</small></h1>
         <ul class="mt-3 pl-3">
           <li class="mb-1"><strong>Software engineers</strong>: <i>{{total_count.count}}</i></li>
-          <li class="mb-1"><strong>Open to work</strong>: <i>{{hireable_count.aggregations.total_hireable.buckets[0].doc_count}}</i></li>
+          <li class="mb-1"><strong>Open to work</strong>:
+            <i>{{hireable_count.aggregations.total_hireable.buckets[0].doc_count}}</i></li>
           <li class="mb-1"><strong>Projects</strong>: <i>{{reports_count.aggregations.total_reports.value}}</i></li>
           <li class="mb-1"><strong>Stack size</strong>: <i>{{stack_size.aggregations.stack_size.value}}</i></li>
         </ul>
@@ -24,7 +25,8 @@
         <p>Think of it as the <i>Yellow Pages</i> of the software engineering world.</p>
 
         <h6 class="mt-3"><strong>Looking for a software engineer?</strong></h6>
-        <p>Only some of the engineers are available. Look for <span class="badge badge-success">Hire me</span> badge.</p>
+        <p>Only some of the engineers are available. Look for <span class="badge badge-success">Hire me</span> badge.
+        </p>
         <p>You are welcome to get in touch with them directly if their contact details are publicly available.</p>
 
       </div>
@@ -42,7 +44,7 @@
       </div>
 
       <div class="col-md-4">
-        <h5>What they are working on ...</h5>
+        <h5>What the world is working on ...</h5>
         {% for ref in top_keywords %}
         <a class="card-text pr-3 mr-6 my-3" title="Used {{ref.c}} times"
           href="/_kw/{{ref.k}}"><small>{{ref.k}}</small></a>
