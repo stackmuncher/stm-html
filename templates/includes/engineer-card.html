@@ -1,0 +1,48 @@
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center" width="100%" height="50">
+      <h5 class="card-title ma-1"><a href="/{{engineer._source.login}}">
+          {% if engineer._source.name %}
+          {{engineer._source.name}}
+          {% else %}
+          Anonymous Engineer
+          {% endif %}
+        </a>
+      </h5>
+    </div>
+    {% set init = engineer._source.report.date_init | date(format="%Y") | int() %}
+    {% set today = now() | date(format="%Y")  | int() %}
+    <p class="card-subtitle mb-2 text-muted">{{engineer._source.public_repos}} projects over
+      {{ today - init + 1}}+ years
+      {% if engineer._source.hireable %}
+      <a href="/{{engineer._source.login}}">
+        <span class="badge badge-success float-right">Hire me</span>
+      </a>
+      {% endif %}
+    </p>
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col"></th>
+          <th scope="col">Files</th>
+          <th scope="col">Lines</th>
+          <th scope="col">Packages</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tech in engineer._source.report.tech | sort(attribute="language")%}
+        {% if tech.name!=".\.csproj$" %}
+        <tr>
+          <td scope="row">{{tech.language}}</th>
+          <td>{{tech.files}}</td>
+          <td>{{tech.code_lines}}</td>
+          <td>{% if tech.refs_kw is iterable %}{{tech.refs_kw | length}}{% endif %}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+
+  </div>
+</div>

@@ -4,7 +4,8 @@ use tracing::warn;
 
 mod engineer;
 mod home;
-mod refs;
+mod keyword;
+mod package;
 
 pub(crate) const KEYWORD_VALIDATION_REGEX: &str = "[^_0-9a-zA-Z]";
    
@@ -38,7 +39,25 @@ pub(crate) async fn html(tera: &Tera, es_url: String, raw_path: String) -> Resul
             warn!("Invalid keyword: {}", raw_path);
             return Err(());
         }
-        return Ok(refs::html(tera, es_url, kw).await?);
+        return Ok(keyword::html(tera, es_url, kw).await?);
+    }
+
+    // a single package, e.g. System.Text.Regex
+    if raw_path.starts_with("/_pkg/") {
+        let pkg = raw_path
+            .trim()
+            .trim_end_matches("/")
+            .trim_start_matches("/_pkg/")
+            .trim()
+            .to_string();
+
+        // check for dis-allowed chars
+        let rgx =  Regex::new("[^\\._0-9a-zA-Z]").expect("Wrong _pkg regex!");
+        if rgx.is_match(&pkg) {
+            warn!("Invalid package: {}", raw_path);
+            return Err(());
+        }
+        return Ok(package::html(tera, es_url, pkg).await?);
     }
 
     // it must be an engineer id, e.g. rimutaka

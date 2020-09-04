@@ -1,162 +1,55 @@
 <!doctype html>
 <html lang="en">
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="">
-  <title>Stack Muncher</title>
+{% include "includes/head.html" %}
 
-  <link rel="canonical" href="https://stackmuncher.com">
+<body class="pb-5">
+  {% include "includes/top-nav.html" %}
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-2">
+        <h1><small>Technology Stack Analysis</small></h1>
+        <ul class="mt-3 pl-3">
+          <li class="mb-1"><strong>Software engineers</strong>: <i>{{total_count.count}}</i></li>
+          <li class="mb-1"><strong>Open to work</strong>: <i>{{hireable_count.aggregations.total_hireable.buckets[0].doc_count}}</i></li>
+          <li class="mb-1"><strong>Projects</strong>: <i>{{reports_count.aggregations.total_reports.value}}</i></li>
+          <li class="mb-1"><strong>Stack size</strong>: <i>{{stack_size.aggregations.stack_size.value}}</i></li>
+        </ul>
 
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-    integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+        {% include "includes/truncated_search_msg.html" %}
 
-  <style>
-    .bd-placeholder-img {
-      font-size: 1.125rem;
-      text-anchor: middle;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-    }
+        <h6 class="mt-3"><strong>About this project</strong></h6>
+        <p>We analyse Git repositories to identify the technology
+          stack, package use, language features and other metrics.</p>
+        <p>Think of it as the <i>Yellow Pages</i> of the software engineering world.</p>
 
-    @media (min-width: 768px) {
-      .bd-placeholder-img-lg {
-        font-size: 3.5rem;
-      }
-    }
+        <h6 class="mt-3"><strong>Looking for a software engineer?</strong></h6>
+        <p>Only some of the engineers are available. Look for <span class="badge badge-success">Hire me</span> badge.</p>
+        <p>You are welcome to get in touch with them directly if their contact details are publicly available.</p>
 
-    .jumbotron {
-      padding-top: 3rem;
-      padding-bottom: 3rem;
-      margin-bottom: 0;
-      background-color: #fff;
-    }
+      </div>
 
-    @media (min-width: 768px) {
-      .jumbotron {
-        padding-top: 6rem;
-        padding-bottom: 6rem;
-      }
-    }
-
-    .jumbotron p:last-child {
-      margin-bottom: 0;
-    }
-
-    .jumbotron h1 {
-      font-weight: 300;
-    }
-
-    .jumbotron .container {
-      max-width: 40rem;
-    }
-
-    footer {
-      padding-top: 3rem;
-      padding-bottom: 3rem;
-    }
-
-    footer p {
-      margin-bottom: .25rem;
-    }
-  </style>
-</head>
-
-<body class="py-4">
-  <div class="container">
-
-    <h1>Technology Stack Analysis</h1>
-
-    <p class="lead">
-      <button type="button" class="btn btn-secondary mt-1 mt-md-0">
-        Software engineers <span class="badge badge-light">{{total_count.count}}</span>
-      </button>
-      <button type="button" class="btn btn-info mt-1 mt-md-0">
-        Open to work <span
-          class="badge badge-light">{{hireable_count.aggregations.total_hireable.buckets[0].doc_count}}</span>
-      </button>
-      <button type="button" class="btn btn-secondary mt-1 mt-md-0">
-        Projects <span class="badge badge-light">{{reports_count.aggregations.total_reports.value}}</span>
-      </button>
-      <button type="button" class="btn btn-secondary mt-1 mt-md-0">
-        Stack size <span class="badge badge-light">{{stack_size.aggregations.stack_size.value}}</span>
-      </button>
-    </p>
-
-    <main role="main">
-
-      <div class="album py-md-3">
-        <div class="container p-0">
-
-          <div class="card mb-5">
-            <div class="card-body">
-              <div class="card-title">
-                <h3>Popular Keywords</h3>
-              </div>
-              {% for ref in top_keywords %}
-              <a class="card-text px-3 ma-3" title="Used {{ref.c}} times"
-                href="/_kw/{{ref.k}}">{{ref.k}}</a>
-              {% endfor %}
-            </div>
-          </div>
-
-
-          <h3>Engineers at work right now</h3>
-
+      <div class="col-md-6">
+        <main role="main">
           <div class="row">
-            {% for user in user_list.hits.hits %}
-            <div class="col-md-4">
-              <div class="card mb-4">
-                <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-center" width="100%" height="50">
-                    <h5 class="card-title ma-1"><a href="./{{user._source.login}}">{% if user._source.name %}
-                        {{user._source.name}}
-                        {% else %}
-                        Anonymous Engineer
-                        {% endif %}
-                      </a>
-                    </h5>
-                  </div>
-                  {% set init = user._source.report.date_init | date(format="%Y") | int() %}
-                  {% set today = now() | date(format="%Y")  | int() %}
-                  <p class="card-subtitle mb-2 text-muted">{{user._source.public_repos}} projects over
-                    {{ today - init + 1}}+ years</p>
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th scope="col"></th>
-                        <th scope="col">Files</th>
-                        <th scope="col">Lines</th>
-                        <th scope="col">Packages</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for tech in user._source.report.tech %}
-                      {% if tech.name!=".\.csproj$" %}
-                      <tr>
-                        <td scope="row">{{tech.language}}</th>
-                        <td>{{tech.files}}</td>
-                        <td>{{tech.code_lines}}</td>
-                        <td>{% if tech.refs_kw is iterable %}{{tech.refs_kw | length}}{% endif %}</td>
-                      </tr>
-                      {% endif %}
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                  
-
-                </div>
-              </div>
+            {% for engineer in engineers.hits.hits %}
+            <div class="col-md-6">
+              {% include "includes/engineer-card.html" %}
             </div>
             {% endfor %}
           </div>
-        </div>
+        </main>
       </div>
 
-    </main>
+      <div class="col-md-4">
+        <h5>What they are working on ...</h5>
+        {% for ref in top_keywords %}
+        <a class="card-text pr-3 mr-6 my-3" title="Used {{ref.c}} times"
+          href="/_kw/{{ref.k}}"><small>{{ref.k}}</small></a>
+        {% endfor %}
+
+      </div>
+    </div>
   </div>
 
 </body>

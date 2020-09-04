@@ -13,7 +13,7 @@ struct DataHome {
     stack_size: Value,
     reports_count: Value,
     top_keywords: Value,
-    user_list: Value,
+    engineers: Value,
 }
 
 #[derive(Deserialize, Debug)]
@@ -60,8 +60,8 @@ pub(crate) async fn html(tera: &Tera, es_url: String) -> Result<String, ()> {
     let stack_size: Value = elastic::search(&es_url, elastic::SEARCH_TOTAL_TECHS).await?;
     let reports_count: Value = elastic::search(&es_url, elastic::SEARCH_TOTAL_REPORTS).await?;
     //let top_keywords: Value = elastic::search(&es_url, elastic::SEARCH_TOP_KEYWORDS).await?;
-    let user_list: Value = elastic::search(&es_url, elastic::SEARCH_TOP_USERS).await?;
-    let top_keywords: Value = serde_json::to_value(extract_keywords(&user_list))
+    let engineers: Value = elastic::search(&es_url, elastic::SEARCH_TOP_USERS).await?;
+    let top_keywords: Value = serde_json::to_value(extract_keywords(&engineers))
         .expect("Cannot convert HashSet with ref_kw to Value");
 
     let data_home = DataHome {
@@ -70,18 +70,16 @@ pub(crate) async fn html(tera: &Tera, es_url: String) -> Result<String, ()> {
         stack_size,
         reports_count,
         top_keywords,
-        user_list,
+        engineers,
     };
-
-    let data_home = serde_json::to_value(data_home).expect("Failed to serialize data_home");
-
-    //println!("{}", data_home);
-    // panic!();
 
     let html = tera
         .render(
             "home.html",
-            &Context::from_value(data_home).expect("Cannot serialize"),
+            &Context::from_value(
+                serde_json::to_value(data_home).expect("Failed to serialize data_home"),
+            )
+            .expect("Cannot create context"),
         )
         .expect("Cannot render");
 

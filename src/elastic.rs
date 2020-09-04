@@ -9,12 +9,13 @@ pub const SEARCH_TOTAL_HIREABLE: &str =
     r#"{"size":0,"aggregations":{"total_hireable":{"terms":{"field":"hireable"}}}}"#;
 pub const SEARCH_TOP_USERS: &str =
     r#"{"size":24,"query":{"match_all":{}},"sort":[{"report.timestamp":{"order":"desc"}}]}"#;
-pub const SEARCH_TOTAL_REPORTS: &str = r#"{"size":0,"aggs":{"total_reports":{"cardinality":{"field":"report.reports_included.keyword"}}}}"#;
+pub const SEARCH_TOTAL_REPORTS: &str = r#"{"size":0,"aggs":{"total_reports":{"value_count":{"field":"report.reports_included.keyword"}}}}"#;
 pub const SEARCH_TOTAL_TECHS: &str =
     r#"{"size":0,"aggs":{"stack_size":{"cardinality":{"field":"report.tech.language.keyword"}}}}"#;
 pub const SEARCH_ENGINEER_BY_LOGIN: &str = r#"{"query":{"term":{"login.keyword":{"value":"%"}}}}"#;
 pub const SEARCH_REFS_BY_KEYWORD: &str = r#"{"size":0,"aggregations":{"refs":{"terms":{"field":"report.tech.refs.k.keyword","size":200,"include":"(.*\\.)?%(\\..*)?"}}}}"#;
 pub const SEARCH_ENGINEER_BY_KEYWORD: &str = r#"{"size":24,"query":{"bool":{"filter":[{"term":{"report.tech.refs_kw.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
+pub const SEARCH_ENGINEER_BY_PACKAGE: &str = r#"{"size":24,"query":{"bool":{"filter":[{"term":{"report.tech.refs.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
 
 /// Run a search with the provided query
 pub(crate) async fn search(es_url: &String, query: &str) -> Result<Value, ()> {

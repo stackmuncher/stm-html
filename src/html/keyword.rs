@@ -11,7 +11,7 @@ struct RefsPage {
     keyword: String,
 }
 
-/// Returns the default home page
+/// Returns package names containing the keyword and engineers using them
 pub(crate) async fn html(tera: &Tera, es_url: String, keyword: String) -> Result<String, ()> {
 
     // ES search requires it to be lower case
@@ -34,11 +34,11 @@ pub(crate) async fn html(tera: &Tera, es_url: String, keyword: String) -> Result
 
     let html = tera
         .render(
-            "refs.html",
+            "keyword.html",
             &Context::from_value(
-                serde_json::to_value(refs_page).expect("Failed to serialize data_home"),
+                serde_json::to_value(refs_page).expect("Failed to serialize RefsPage"),
             )
-            .expect("Cannot serialize"),
+            .expect("Cannot create context"),
         )
         .expect("Cannot render");
 

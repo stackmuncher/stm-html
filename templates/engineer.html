@@ -1,213 +1,168 @@
 <!doctype html>
 <html lang="en">
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="">
-  <title>Stack Muncher</title>
+{% include "includes/head.html" %}
 
-  <link rel="canonical" href="https://stackmuncher.com">
-
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-    integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
-
-  <style>
-    .bd-placeholder-img {
-      font-size: 1.125rem;
-      text-anchor: middle;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-    }
-
-    @media (min-width: 768px) {
-      .bd-placeholder-img-lg {
-        font-size: 3.5rem;
-      }
-    }
-
-    .jumbotron {
-      padding-top: 3rem;
-      padding-bottom: 3rem;
-      margin-bottom: 0;
-      background-color: #fff;
-    }
-
-    @media (min-width: 768px) {
-      .jumbotron {
-        padding-top: 6rem;
-        padding-bottom: 6rem;
-      }
-    }
-
-    .jumbotron p:last-child {
-      margin-bottom: 0;
-    }
-
-    .jumbotron h1 {
-      font-weight: 300;
-    }
-
-    .jumbotron .container {
-      max-width: 40rem;
-    }
-
-    footer {
-      padding-top: 3rem;
-      padding-bottom: 3rem;
-    }
-
-    footer p {
-      margin-bottom: .25rem;
-    }
-  </style>
-</head>
-
-<body class="py-4">
-  <div class="container">
-    {% if hits.hits | length > 0 %}
-    {% for hit in hits.hits %}
-    {% set user = hit._source %}
-    <h1>{% if user.name %}
-      {{user.name}}
-      {% else %}
-      Anonymous Engineer
-      {% endif %}
-    </h1>
-
-    <p class="lead mb-4">
-      {% if user.hireable %}
-      <button type="button" class="btn btn-info mt-1 mt-md-0">Open to work</button>
-      {% endif %}
-      {% if user.location %}
-      <button type="button" class="btn btn-secondary mt-1 mt-md-0">{{user.location}}</button>
-      {% endif %}
-      {% if user.company %}
-      <button type="button" class="btn btn-secondary mt-1 mt-md-0">{{user.company}}</button>
-      {% endif %}
-
-      {% set init = user.report.date_init | date(format="%Y") | int() %}
-      {% set today = now() | date(format="%Y")  | int() %}
-      <button type="button" class="btn btn-secondary mt-1 mt-md-0">{% if today == init %}
-        &lt; 1 year history
+<body>
+  {% include "includes/top-nav.html" %}
+  <div class="container-fluid">
+    <div class="row">
+      {% if hits.hits | length > 0 %}
+      <div class="col-md-3">
+        {% for hit in hits.hits %}
+        {% set user = hit._source %}
+        {% if user.name %}
+        <h1><small>{{user.name}}</small></h1>
+        <h5><small>Software engineer</small></h5>
         {% else %}
-        {{ today - init }} years history
-        {% endif %}</button>
-    </p>
+        <h1><small>Anonymous Software Engineer</small></h1>
+        {% endif %}
 
-    <div class="table-responsive">
-      <table class="table my-4">
-        <thead>
-          <tr>
-            <th scope="col">Language</th>
-            <th scope="col">File type</th>
-            <th scope="col">File count</th>
-            <th scope="col">Lines of code</th>
-            <th scope="col">Libraries</th>
-            <th scope="col">Doco comments</th>
-            <th scope="col">Inline comments</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for tech in user.report.tech | sort(attribute="language") | sort(attribute="name") %}
-          <tr>
-            <td scope="row"><strong>{{tech.language}}</strong></th>
-            <td>{{tech.name | replace(from="$", to="") | replace(from=".\", to="")}}</td>
-            <td>{{tech.files}}</td>
-            <td>{{tech.code_lines}}</td>
-            <td>{% if tech.refs | length > 0 %}{{tech.refs | length}}{% endif %}</td>
-            <td>{% if tech.docs_comments > 0 %}{{tech.docs_comments}}{% endif %}</td>
-            <td>{% if tech.line_comments > 0 %}{{tech.line_comments}}{% endif %}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
 
-    <div class="card" style="border:none">
-      <div class="card-body">
-        <h5 class="card-title ma-1">
-          <h3>Projects</h3>
-        </h5>
-        <ul class="list-inline">
-          {% for proj in user.report.reports_included | sort %}
-          {% set len = proj | length | int() %}
-          <li class="px-2 ma-3 .text-nowrap text-muted list-inline-item">
-            <a title="View project report"
-              href="#">{{proj | truncate(length=len-23, end="") | replace(from=user.report.user_name, to="") | replace(from="/", to="")}}</a>
+        <ul class="mt-3 pl-3">
+          {% if user.hireable %}
+          <li class="mb-1"><strong><span class="badge badge-success">Open to work</span></strong></li>
+          {% endif %}
+          {% if user.location %}
+          <li class="mb-1"><strong>Location</strong>: {{user.location}}</li>
+          {% endif %}
+          {% if user.company %}
+          <li class="mb-1"><strong>Company</strong>: {{user.company}}</li>
+          {% endif %}
+          <li class="mb-1"><strong>Github</strong>: <a href="https://github.com/{{user.login}}">{{user.login}}</a></li>
+          {% if user.blog %}
+          <li class="mb-1"><strong>Website</strong>: <a class="text-truncate"
+              href="https://github.com/{{user.blog}}">{{user.blog}}</a></li>
+          {% endif %}
+          {% if user.email %}
+          <li class="mb-1"><strong>Email</strong>: {{user.email}}</li>
+          {% endif %}
+
+          {% set init = user.report.date_init | date(format="%Y") | int() %}
+          {% set today = now() | date(format="%Y")  | int() %}
+          <li class="mb-1"><strong>Code history</strong>: {% if today == init %}
+            &lt; 1 year
+            {% else %}
+            {{ today - init }} years
+            {% endif %}
           </li>
-          {% endfor %}
         </ul>
+
       </div>
-    </div>
-
-    {% for tech in user.report.tech %}
-    {% if tech.name==".\.cs$" %}
-    {% set col = tech.refs | length / 3 | int() %}
-    <div class="card" style="border:none">
-      <div class="card-body">
-        <h5 class="card-title ma-1">
-          <h3>Libraries</h3>
-        </h5>
-        <div class="row">
-
-          <div class="col-md-4">
-            <ul>
-              {% for ref in tech.refs | sort(attribute="k") | slice(start=0, end=col+1)  %}
-              <li class="px-2 ma-3 .text-nowrap text-muted">
-                <a href="/kw/{{ref.k}}">{{ref.k}}</a>: <small>{{ref.c}}</small></li>
+      <div class="col-md-9">
+        <div class="table-responsive">
+          <table class="table my-4">
+            <thead>
+              <tr>
+                <th scope="col">Language</th>
+                <th scope="col">File type</th>
+                <th scope="col">File count</th>
+                <th scope="col">Lines of code</th>
+                <th scope="col">Libraries</th>
+                <th scope="col">Doco comments</th>
+                <th scope="col">Inline comments</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for tech in user.report.tech | sort(attribute="language") | sort(attribute="name") %}
+              <tr>
+                <td scope="row"><strong>{{tech.language}}</strong></th>
+                <td>{{tech.name | replace(from="$", to="") | replace(from=".\", to="")}}</td>
+                <td>{{tech.files}}</td>
+                <td>{{tech.code_lines}}</td>
+                <td>{% if tech.refs | length > 0 %}{{tech.refs | length}}{% endif %}</td>
+                <td>{% if tech.docs_comments > 0 %}{{tech.docs_comments}}{% endif %}</td>
+                <td>{% if tech.line_comments > 0 %}{{tech.line_comments}}{% endif %}</td>
+              </tr>
               {% endfor %}
-            </ul>
-          </div>
-
-          <div class="col-md-4">
-            <ul>
-              {% for ref in tech.refs | sort(attribute="k") | slice(start=col+1, end=col*2+1)  %}
-              <li class="px-2 ma-3 .text-nowrap text-muted">
-                <a href="/kw/{{ref.k}}">{{ref.k}}</a>: <small>{{ref.c}}</small></li>
-              {% endfor %}
-            </ul>
-          </div>
-
-          <div class="col-md-4">
-            <ul>
-              {% for ref in tech.refs | sort(attribute="k") | slice(start=col*2+1)  %}
-              <li class="px-2 ma-3 .text-nowrap text-muted">
-                <a href="/kw/{{ref.k}}">{{ref.k}}</a>: <small>{{ref.c}}</small></li>
-              {% endfor %}
-            </ul>
-          </div>
-
+            </tbody>
+          </table>
         </div>
+
+        <div class="card" style="border:none">
+          <div class="card-body">
+            <h5 class="card-title ma-1">
+              <h3>Projects</h3>
+            </h5>
+            <ul class="list-inline">
+              {% for proj in user.report.reports_included | sort %}
+              {% set len = proj | length | int() %}
+              <li class="pr-4 .text-nowrap list-inline-item">
+                {% set pname = proj | truncate(length=len-23, end="") | replace(from=user.report.user_name, to="") | replace(from="/", to="") %}
+                <a href="https://github.com/{{user.login}}/{{pname}}">{{pname}}</a>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+
+        {% for tech in user.report.tech %}
+        {% if tech.name==".\.cs$" %}
+        {% set col = tech.refs | length / 3 | int() %}
+        <div class="card" style="border:none">
+          <div class="card-body">
+            <h5 class="card-title ma-1">
+              <h3>Libraries</h3>
+            </h5>
+            <div class="row">
+
+              <div class="col-md-4">
+                <ul class="pl-3">
+                  {% for ref in tech.refs | sort(attribute="k") | slice(start=0, end=col+1)  %}
+                  <li class="px-2 .text-nowrap">
+                    <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>: <small>{{ref.c}}</small></li>
+                  {% endfor %}
+                </ul>
+              </div>
+
+              <div class="col-md-4">
+                <ul>
+                  {% for ref in tech.refs | sort(attribute="k") | slice(start=col+1, end=col*2+1)  %}
+                  <li class="px-2 .text-nowrap">
+                    <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>: <small>{{ref.c}}</small></li>
+                  {% endfor %}
+                </ul>
+              </div>
+
+              <div class="col-md-4">
+                <ul>
+                  {% for ref in tech.refs | sort(attribute="k") | slice(start=col*2+1)  %}
+                  <li class="px-2 ma-3 .text-nowrap text-muted">
+                    <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>: <small>{{ref.c}}</small></li>
+                  {% endfor %}
+                </ul>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+
+
+        {% if user.report.unknown_file_types | length > 0 %}
+        <div class="card" style="border:none">
+          <div class="card-body">
+            <h5 class="card-title ma-1">
+              <h3>Other files</h3>
+            </h5>
+            <ul class="list-inline">
+              {% for ftype in user.report.unknown_file_types | sort(attribute="k") %}
+              <li class="pr-4 .text-nowrap text-muted list-inline-item">
+                {{ftype.k}}: <small>{{ftype.c}}</small></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        {% endif %}
+
+        {% endfor %}
       </div>
+      {% else %}
+      <h1 class="mt-3 ml-3">User not found</h1>
+      {% endif %}
     </div>
-    {% endif %}
-    {% endfor %}
-
-
-
-    <div class="card" style="border:none">
-      <div class="card-body">
-        <h5 class="card-title ma-1">
-          <h3>Other files</h3>
-        </h5>
-        <ul class="list-inline">
-          {% for ftype in user.report.unknown_file_types | sort(attribute="k") %}
-          <li class="px-2 ma-3 .text-nowrap text-muted list-inline-item">
-            {{ftype.k}}: <small>{{ftype.c}}</small></li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-
-    {% endfor %}
-    {% else %}
-    <h1>User not found</h1>
-    {% endif %}
   </div>
-
 
 </body>
 

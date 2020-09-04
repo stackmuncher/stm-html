@@ -1,0 +1,4 @@
+{% if engineers.hits.total.value > engineers.hits.hits | length %}
+<p class="text-muted">Results were truncated to {{engineers.hits.hits | length}} recently active engineers. New
+  names are added every few minutes. <a href="mailto:hello@stackmuncher.com">Contact us</a> for full access.</p>
+{% endif %}
