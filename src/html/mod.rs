@@ -3,20 +3,19 @@ use tera::Tera;
 use tracing::warn;
 
 mod engineer;
+pub(crate) mod error_404;
 mod home;
 mod keyword;
 mod package;
 
 pub(crate) const KEYWORD_VALIDATION_REGEX: &str = "[^_0-9a-zA-Z]";
-   
-
 
 /// Routes HTML requests to processing modules
 pub(crate) async fn html(tera: &Tera, es_url: String, raw_path: String) -> Result<String, ()> {
     // is the request too long?
     if raw_path.len() > 100 {
         warn!("Very long request: {}", raw_path);
-        return Err(());
+        return Ok("".to_owned());
     }
 
     // is it a homepage?
@@ -34,10 +33,13 @@ pub(crate) async fn html(tera: &Tera, es_url: String, raw_path: String) -> Resul
             .to_string();
 
         // check for dis-allowed chars
-        let rgx =  Regex::new(KEYWORD_VALIDATION_REGEX).expect("Wrong _kw regex!");
-        if rgx.is_match(&kw) {
+        if kw.len() < 3
+            || Regex::new(KEYWORD_VALIDATION_REGEX)
+                .expect("Wrong _kw regex!")
+                .is_match(&kw)
+        {
             warn!("Invalid keyword: {}", raw_path);
-            return Err(());
+            return Ok("".to_owned());
         }
         return Ok(keyword::html(tera, es_url, kw).await?);
     }
@@ -52,10 +54,10 @@ pub(crate) async fn html(tera: &Tera, es_url: String, raw_path: String) -> Resul
             .to_string();
 
         // check for dis-allowed chars
-        let rgx =  Regex::new("[^\\._0-9a-zA-Z]").expect("Wrong _pkg regex!");
+        let rgx = Regex::new("[^\\._0-9a-zA-Z]").expect("Wrong _pkg regex!");
         if rgx.is_match(&pkg) {
             warn!("Invalid package: {}", raw_path);
-            return Err(());
+            return Ok("".to_owned());
         }
         return Ok(package::html(tera, es_url, pkg).await?);
     }
@@ -73,7 +75,7 @@ pub(crate) async fn html(tera: &Tera, es_url: String, raw_path: String) -> Resul
     if rgx.is_match(&login) {
         // there is an invalid character - return an error
         warn!("Invalid login: {}", raw_path);
-        return Err(());
+        return Ok("".to_owned());
     }
 
     return Ok(engineer::html(tera, es_url, login).await?);

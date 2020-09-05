@@ -7,9 +7,12 @@
     <div class="navbar-nav mr-auto">
       &nbsp;
     </div>
-    <form class="form-inline my-2 my-lg-0">
-      <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-      <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-    </form>
+    <div class="form-inline my-2 my-lg-0">
+      <input class="form-control mr-sm-2" type="search" placeholder="Keyword search" title="Search by keyword. 3 to 20 letters, numbers or _."
+        aria-label="Search by keyword. 3 to 20 letters, numbers or _." id="kw" minlength="3" maxlength="20"
+        pattern="[_0-9a-zA-Z]{3,20}" onkeydown="if (event.keyCode===13) document.getElementById('btn').click()">
+      <button class="btn btn-outline-success my-2 my-sm-0" type="button" id="btn" autocomplete="off"
+        onclick="const v=document.getElementById('kw'); if (v.validity.valid) window.location.href='/_kw/'+v.value">Search</button>
+    </div>
   </div>
 </nav>

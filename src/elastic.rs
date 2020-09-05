@@ -13,7 +13,7 @@ pub const SEARCH_TOTAL_REPORTS: &str = r#"{"size":0,"aggs":{"total_reports":{"va
 pub const SEARCH_TOTAL_TECHS: &str =
     r#"{"size":0,"aggs":{"stack_size":{"cardinality":{"field":"report.tech.language.keyword"}}}}"#;
 pub const SEARCH_ENGINEER_BY_LOGIN: &str = r#"{"query":{"term":{"login.keyword":{"value":"%"}}}}"#;
-pub const SEARCH_REFS_BY_KEYWORD: &str = r#"{"size":0,"aggregations":{"refs":{"terms":{"field":"report.tech.refs.k.keyword","size":200,"include":"(.*\\.)?%(\\..*)?"}}}}"#;
+pub const SEARCH_REFS_BY_KEYWORD: &str = r#"{"size":0,"aggregations":{"refs":{"terms":{"field":"report.tech.refs.k.keyword","size":200,"include":"(.*\\.)?%.*"}}}}"#;
 pub const SEARCH_ENGINEER_BY_KEYWORD: &str = r#"{"size":24,"query":{"bool":{"filter":[{"term":{"report.tech.refs_kw.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
 pub const SEARCH_ENGINEER_BY_PACKAGE: &str = r#"{"size":24,"query":{"bool":{"filter":[{"term":{"report.tech.refs.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
 

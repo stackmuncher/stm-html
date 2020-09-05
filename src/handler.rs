@@ -49,22 +49,33 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
     };
 
     // do something useful here
-    let html = html::html(&tera, es_url, raw_path)
+    let html = html::html(&tera, es_url, raw_path.clone())
         .await
         .expect("html() failed");
 
+    // an empty response = validation problems -> return 404
+    if html.is_empty() {
+        let html = html::error_404::html(&tera, raw_path)
+            .await
+            .expect("Failed to produce 404 page");
+        return gw_response(html, 404);
+    }
+
+    // return back the result
+    gw_response(html, 200)
+}
+
+/// Prepares the response with the status and HTML body. May fail and return an error.
+fn gw_response(body: String, status_code: i32) -> Result<Value, Error> {
     let mut headers: HashMap<String, String> = HashMap::new();
     headers.insert("Content-Type".to_owned(), "text/html".to_owned());
 
     let resp = ApiGatewayResponse {
         is_base64_encoded: false,
-        status_code: 200,
+        status_code,
         headers,
-        body: html,
+        body,
     };
 
-    let resp = serde_json::to_value(resp).expect("Failed to serialize response");
-
-    // return back the result
-    Ok(resp)
+    Ok(serde_json::to_value(resp).expect("Failed to serialize response"))
 }

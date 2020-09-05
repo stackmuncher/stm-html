@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+
+{% include "includes/head.html" %}
+
+<body>
+  {% include "includes/top-nav.html" %}
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-3">
+        <h1><small>Invalid search</small></h1>
+        <h5><code>{{search}}</code></h5>
+        <p>This interface can only search for keywords with 3 to 20 ASCII letters or numbers. No other characters
+          are allowed.</p>
+
+        <p>Registered users can search by multiple parameters. <a href="mailto:hello@stackmuncher.com">Contact us</a>
+          for full access.</p>
+      </div>
+
+      <div class="col-md-9">
+        <main role="main">
+          <h2 style="text-align:center; font-size:1000%; font-weight:600;" class="pr-md-5 mt-5 text-muted">404</h2>
+        </main>
+      </div>
+
+    </div>
+  </div>
+</body>
+
+</html>

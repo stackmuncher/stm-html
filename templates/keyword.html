@@ -20,6 +20,7 @@
 
         {% include "includes/truncated_search_msg.html" %}
 
+        {% if refs.aggregations.refs.buckets | length > 0 %}
         <h3>Related packages</h3>
         <ul class="list-unstyled">
           {% for ref in refs.aggregations.refs.buckets | sort(attribute="key") %}
@@ -32,9 +33,14 @@
           </li>
           {% endfor %}
         </ul>
+        {% else %}
+        <h3>Not found</h3>
+        <p>New engineer reports are added every few minutes.</p>
+        <p>Registered users can set up alerts for package use by engineers. <a
+            href="mailto:hello@stackmuncher.com">Contact us</a>
+          for full access.</p>
+        {% endif %}
       </div>
-
-
 
       <div class="col-md-9">
         <main role="main">
