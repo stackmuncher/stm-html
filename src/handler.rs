@@ -24,20 +24,6 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
     // get the path from the request
     let raw_path = event["rawPath"].as_str().unwrap_or_default().to_string();
 
-    match raw_path.as_str() {
-        "/favicon.ico" => {
-            return Ok(serde_json::to_value(ApiGatewayResponse {
-                is_base64_encoded: false,
-                status_code: 404,
-                headers: HashMap::new(),
-                body: "".into(),
-            })
-            .expect("Failed to serialize response"));
-        }
-        _ => { // do nothing
-        }
-    }
-
     let es_url = std::env::var("STACK_MUNCHER_ES_URL").expect("Missing STACK_MUNCHER_ES_URL");
 
     let tera = match Tera::new("templates/**/*.html") {
