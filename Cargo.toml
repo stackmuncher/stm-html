@@ -14,9 +14,9 @@ tokio = { version = "0.2.4", features = ["full"] }
 tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = "0.2"
 log = "0.4"
-lambda = { path = "/home/ubuntu/rust/aws-lambda-rust-runtime/lambda" }
-lambda_http = { path = "/home/ubuntu/rust/aws-lambda-rust-runtime/lambda-http" }
-rusoto_sqs = { version = "0.45", features = ["rustls"], default-features = false }
-rusoto_core = { version = "0.45", features = ["rustls"], default-features = false }
+lambda = { git = "https://github.com/rimutaka/aws-lambda-rust-runtime", branch = "proxy-experiment" }
 elasticsearch = { version = "7.8.1-alpha.1", features = ["rustls-tls"], default-features = false }
 regex = "1.3"
+rust-embed = { version = "5.6", features = ["compression"] }
+rusoto_sqs = { version = "0.45", features = ["rustls"], default-features = false }
+rusoto_core = { version = "0.45", features = ["rustls"], default-features = false }
