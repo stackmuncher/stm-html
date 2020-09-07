@@ -7,7 +7,7 @@
   {% include "includes/top-nav.html" %}
   <div class="container-fluid">
     <div class="row">
-      <div class="col-md-2">
+      <div class="col-lg-2">
         <h1><small>Technology Stack Analysis</small></h1>
         <ul class="mt-3 pl-3">
           <li class="mb-1"><strong>Software engineers</strong>: <i>{{total_count.count}}</i></li>
@@ -31,11 +31,11 @@
 
       </div>
 
-      <div class="col-md-6">
+      <div class="col-lg-6">
         <main role="main">
           <div class="row">
             {% for engineer in engineers.hits.hits %}
-            <div class="col-md-6">
+            <div class="col-lg-6">
               {% include "includes/engineer-card.html" %}
             </div>
             {% endfor %}
@@ -43,7 +43,7 @@
         </main>
       </div>
 
-      <div class="col-md-4">
+      <div class="col-lg-4">
         <h5>What the world is working on ...</h5>
         {% for ref in top_keywords %}
         <a class="card-text pr-3 mr-6 my-3" title="Used {{ref.c}} times"
