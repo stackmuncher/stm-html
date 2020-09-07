@@ -15,7 +15,9 @@ tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = "0.2"
 log = "0.4"
 lambda = { git = "https://github.com/rimutaka/aws-lambda-rust-runtime", branch = "proxy-experiment" }
-elasticsearch = { version = "7.8.1-alpha.1", features = ["rustls-tls"], default-features = false }
+hyper = "0.13"
+hyper-rustls = "0.21"
+rusoto_signature = "0.45"
 regex = "1.3"
 rust-embed = { version = "5.6", features = ["compression"] }
 rusoto_sqs = { version = "0.45", features = ["rustls"], default-features = false }

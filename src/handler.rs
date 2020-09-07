@@ -29,7 +29,9 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
     // get the path from the request
     let raw_path = event["rawPath"].as_str().unwrap_or_default().to_string();
 
+    // get ElasticSearch URL
     let es_url = std::env::var("STACK_MUNCHER_ES_URL").expect("Missing STACK_MUNCHER_ES_URL");
+    let es_url = es_url.trim().trim_end_matches("/").to_string();
 
     let tera = tera_init()?;
 
