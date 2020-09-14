@@ -35,9 +35,19 @@
         <main role="main">
           <div class="row">
             {% for engineer in engineers.hits.hits %}
+            {% if engineer._source.hireable %}
             <div class="col-lg-6">
               {% include "includes/engineer-card.html" %}
             </div>
+            {% endif %}
+            {% endfor %}
+
+            {% for engineer in engineers.hits.hits %}
+            {% if not engineer._source.hireable %}
+            <div class="col-lg-6">
+              {% include "includes/engineer-card.html" %}
+            </div>
+            {% endif %}
             {% endfor %}
           </div>
         </main>
