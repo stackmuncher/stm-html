@@ -10,11 +10,13 @@ pub(crate) type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     // init the logger with the specified level
-    tracing_subscriber::fmt()
+    let tsub = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
-        .with_ansi(false)
-        .without_time()
-        .init();
+        .with_ansi(false);
+    // time is not needed in CloudWatch, but is useful in console
+    #[cfg(not(debug_assertions))]
+    let tsub = tsub.without_time();
+    tsub.init();
 
     #[cfg(debug_assertions)]
     return proxy::run().await;
@@ -39,11 +41,11 @@ mod proxy {
 
     pub(crate) type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 
-    const AWS_REGION: Region = Region::ApSoutheast2; // replace with your preferred region
+    const AWS_REGION: Region = Region::UsEast1; // replace with your preferred region
     const REQUEST_QUEUE_URL: &str =
-        "https://sqs.ap-southeast-2.amazonaws.com/028534811986/LAMBDA_PROXY_REQ"; // insert your queue URL here
+        "https://sqs.us-east-1.amazonaws.com/028534811986/LAMBDA_PROXY_REQ"; // insert your queue URL here
     const RESPONSE_QUEUE_URL: &str =
-        "https://sqs.ap-southeast-2.amazonaws.com/028534811986/LAMBDA_PROXY_RESP"; // insert your queue URL here
+        "https://sqs.us-east-1.amazonaws.com/028534811986/LAMBDA_PROXY_RESP"; // insert your queue URL here
 
     #[derive(Deserialize, Debug)]
     struct RequestPayload {

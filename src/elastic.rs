@@ -6,7 +6,7 @@ use rusoto_signature::signature::SignedRequest;
 use serde_json::Value;
 use std::convert::TryInto;
 use std::str::FromStr;
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 pub const USER_IDX: &str = "users";
 
@@ -24,16 +24,21 @@ pub const SEARCH_ENGINEER_BY_KEYWORD: &str = r#"{"size":24,"query":{"bool":{"fil
 pub const SEARCH_ENGINEER_BY_PACKAGE: &str = r#"{"size":24,"query":{"bool":{"filter":[{"term":{"report.tech.refs.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
 
 /// Run a search with the provided query
-pub(crate) async fn search(es_url: &String, query: &str) -> Result<Value, ()> {
-    let es_api_endpoint = [es_url.as_ref(), "/", USER_IDX, "/_search"].concat();
-    call_es_api(es_api_endpoint, Some(query.to_string())).await
+pub(crate) async fn search(es_url: &String, query: Option<&str>) -> Result<Value, ()> {
+    if query.is_some() {
+        let es_api_endpoint = [es_url.as_ref(), "/", USER_IDX, "/_search"].concat();
+        return call_es_api(es_api_endpoint, Some(query.unwrap().to_string())).await;
+    } else {
+        let es_api_endpoint = [es_url.as_ref(), "/", USER_IDX, "/_count"].concat();
+        return call_es_api(es_api_endpoint, None).await;
+    }
 }
 
-/// Count number of docs in the index
-pub(crate) async fn count(es_url: &String) -> Result<Value, ()> {
-    let es_api_endpoint = [es_url.as_ref(), "/", USER_IDX, "/_count"].concat();
-    call_es_api(es_api_endpoint, None).await
-}
+// /// Count number of docs in the index
+// pub(crate) async fn count(es_url: &String) -> Result<Value, ()> {
+//     let es_api_endpoint = [es_url.as_ref(), "/", USER_IDX, "/_count"].concat();
+//     call_es_api(es_api_endpoint, None).await
+// }
 
 /// Inserts a single param in the ES query
 pub(crate) fn add_param(query: &str, param: String) -> String {
@@ -61,6 +66,12 @@ pub(crate) async fn call_es_api(
         None => ("GET", None),
         Some(v) => ("POST", Some(v.as_bytes().to_owned())),
     };
+    let payload_id = if payload.is_none() {
+        0usize
+    } else {
+        payload.as_ref().unwrap().len()
+    };
+    info!("ES query {} started", payload_id);
 
     // The URL will need to be split into parts to extract region, host, etc.
     let uri = Uri::from_maybe_shared(es_api_endpoint).expect("Invalid ES URL");
@@ -102,6 +113,7 @@ pub(crate) async fn call_es_api(
         .await
         .expect("ES request failed");
 
+    info!("ES query {} response arrived", payload_id);
     let status = res.status();
 
     // Concatenate the body stream into a single buffer...
@@ -123,7 +135,10 @@ pub(crate) async fn call_es_api(
     }
 
     // all responses should be JSON. If it's not JSON it's an error.
-    Ok(serde_json::from_slice::<Value>(&buf).expect("Failed to convert ES resp to JSON"))
+    let output =
+        Ok(serde_json::from_slice::<Value>(&buf).expect("Failed to convert ES resp to JSON"));
+    info!("ES query {} finished", payload_id);
+    output
 }
 
 /// Logs the body as error!(), if possible.

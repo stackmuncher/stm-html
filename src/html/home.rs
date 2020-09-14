@@ -1,10 +1,11 @@
 use crate::elastic;
+use futures::future::join_all;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use tera::{Context, Tera};
-use tracing::warn;
+use tracing::{info, warn};
 
 #[derive(Serialize)]
 struct DataHome {
@@ -55,14 +56,34 @@ struct RefsKw {
 
 /// Returns the default home page
 pub(crate) async fn html(tera: &Tera, es_url: String) -> Result<String, ()> {
-    let total_count: Value = elastic::count(&es_url).await?;
-    let hireable_count: Value = elastic::search(&es_url, elastic::SEARCH_TOTAL_HIREABLE).await?;
-    let stack_size: Value = elastic::search(&es_url, elastic::SEARCH_TOTAL_TECHS).await?;
-    let reports_count: Value = elastic::search(&es_url, elastic::SEARCH_TOTAL_REPORTS).await?;
-    //let top_keywords: Value = elastic::search(&es_url, elastic::SEARCH_TOP_KEYWORDS).await?;
-    let engineers: Value = elastic::search(&es_url, elastic::SEARCH_TOP_USERS).await?;
+    // prepare ES tasks
+    let total_count = elastic::search(&es_url, None);
+    let hireable_count = elastic::search(&es_url, Some(elastic::SEARCH_TOTAL_HIREABLE));
+    let stack_size = elastic::search(&es_url, Some(elastic::SEARCH_TOTAL_TECHS));
+    let reports_count = elastic::search(&es_url, Some(elastic::SEARCH_TOTAL_REPORTS));
+    let engineers = elastic::search(&es_url, Some(elastic::SEARCH_TOP_USERS));
+
+    // execute all searches in parallel
+    let futures = vec![
+        total_count,
+        hireable_count,
+        stack_size,
+        reports_count,
+        engineers,
+    ];
+    let mut resp = join_all(futures).await;
+
+    // restore the results
+    let total_count = resp.remove(0)?;
+    let hireable_count = resp.remove(0)?;
+    let stack_size = resp.remove(0)?;
+    let reports_count = resp.remove(0)?;
+    let engineers = resp.remove(0)?;
+    // note, total_count has a different Fn signature and could not be added to join_all
+
     let top_keywords: Value = serde_json::to_value(extract_keywords(&engineers))
         .expect("Cannot convert HashSet with ref_kw to Value");
+    info!("top_keywords extracted");
 
     let data_home = DataHome {
         total_count,
@@ -82,6 +103,8 @@ pub(crate) async fn html(tera: &Tera, es_url: String) -> Result<String, ()> {
             .expect("Cannot create context"),
         )
         .expect("Cannot render");
+
+    info!("Rendered");
 
     Ok(html)
 }
