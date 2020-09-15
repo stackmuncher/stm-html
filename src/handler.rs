@@ -36,7 +36,7 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
     let tera = tera_init()?;
 
     // do something useful here
-    let html = html::html(&tera, es_url, raw_path.clone())
+    let (html, ttl) = html::html(&tera, es_url, raw_path.clone())
         .await
         .expect("html() failed");
 
@@ -45,17 +45,21 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
         let html = html::error_404::html(&tera, raw_path)
             .await
             .expect("Failed to produce 404 page");
-        return gw_response(html, 404);
+        return gw_response(html, 404, ttl);
     }
 
     // return back the result
-    gw_response(html, 200)
+    gw_response(html, 200, ttl)
 }
 
 /// Prepares the response with the status and HTML body. May fail and return an error.
-fn gw_response(body: String, status_code: i32) -> Result<Value, Error> {
+fn gw_response(body: String, status_code: i32, ttl: i32) -> Result<Value, Error> {
     let mut headers: HashMap<String, String> = HashMap::new();
     headers.insert("Content-Type".to_owned(), "text/html".to_owned());
+    headers.insert(
+        "Cache-Control".to_owned(),
+        ["max-age=".to_owned(), ttl.to_string()].concat(),
+    );
 
     let resp = ApiGatewayResponse {
         is_base64_encoded: false,

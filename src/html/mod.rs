@@ -8,19 +8,30 @@ mod home;
 mod keyword;
 mod package;
 
+const TTL_HOME: i32 = 600;
+const TTL_KW: i32 = 3600;
+const TTL_PKG: i32 = 3600;
+const TTL_ENGINEER: i32 = 86400;
+const TTL_BAD_REQ: i32 = 86400;
+
+
 pub(crate) const KEYWORD_VALIDATION_REGEX: &str = "[^_0-9a-zA-Z]";
 
-/// Routes HTML requests to processing modules
-pub(crate) async fn html(tera: &Tera, es_url: String, raw_path: String) -> Result<String, ()> {
+/// Routes HTML requests to processing modules. Returns HTML response and TTL value in seconds.
+pub(crate) async fn html(
+    tera: &Tera,
+    es_url: String,
+    raw_path: String,
+) -> Result<(String, i32), ()> {
     // is the request too long?
     if raw_path.len() > 100 {
         warn!("Very long request: {}", raw_path);
-        return Ok("".to_owned());
+        return Ok(("".to_owned(), TTL_BAD_REQ));
     }
 
     // is it a homepage?
     if raw_path.len() < 2 {
-        return Ok(home::html(tera, es_url).await?);
+        return Ok((home::html(tera, es_url).await?, TTL_HOME));
     }
 
     // a single keyword, e.g. System or Microsoft
@@ -39,9 +50,9 @@ pub(crate) async fn html(tera: &Tera, es_url: String, raw_path: String) -> Resul
                 .is_match(&kw)
         {
             warn!("Invalid keyword: {}", raw_path);
-            return Ok("".to_owned());
+            return Ok(("".to_owned(), TTL_BAD_REQ));
         }
-        return Ok(keyword::html(tera, es_url, kw).await?);
+        return Ok((keyword::html(tera, es_url, kw).await?, TTL_KW));
     }
 
     // a single package, e.g. System.Text.Regex
@@ -57,9 +68,9 @@ pub(crate) async fn html(tera: &Tera, es_url: String, raw_path: String) -> Resul
         let rgx = Regex::new("[^\\._0-9a-zA-Z]").expect("Wrong _pkg regex!");
         if rgx.is_match(&pkg) {
             warn!("Invalid package: {}", raw_path);
-            return Ok("".to_owned());
+            return Ok(("".to_owned(), TTL_BAD_REQ));
         }
-        return Ok(package::html(tera, es_url, pkg).await?);
+        return Ok((package::html(tera, es_url, pkg).await?, TTL_PKG));
     }
 
     // it must be an engineer id, e.g. rimutaka
@@ -75,8 +86,8 @@ pub(crate) async fn html(tera: &Tera, es_url: String, raw_path: String) -> Resul
     if rgx.is_match(&login) {
         // there is an invalid character - return an error
         warn!("Invalid login: {}", raw_path);
-        return Ok("".to_owned());
+        return Ok(("".to_owned(), TTL_BAD_REQ));
     }
 
-    return Ok(engineer::html(tera, es_url, login).await?);
+    return Ok((engineer::html(tera, es_url, login).await?, TTL_ENGINEER));
 }
