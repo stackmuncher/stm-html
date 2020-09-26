@@ -45,12 +45,12 @@
       },
       "email": {
         "type": "text",
-        "analyzer":"lowercase",
+        "analyzer": "lowercase",
         "fields": {
           "keyword": {
             "type": "keyword",
             "ignore_above": 256,
-            "normalizer":"lowercase"
+            "normalizer": "lowercase"
           }
         }
       },
@@ -71,18 +71,18 @@
       },
       "login": {
         "type": "text",
-        "analyzer":"lowercase",
+        "analyzer": "lowercase",
         "fields": {
           "keyword": {
             "type": "keyword",
             "ignore_above": 256,
-            "normalizer":"lowercase"
+            "normalizer": "lowercase"
           }
         }
       },
       "name": {
         "type": "text",
-        "analyzer":"lowercase"
+        "analyzer": "lowercase"
       },
       "node_id": {
         "type": "text",
@@ -103,12 +103,12 @@
         "properties": {
           "collaborators": {
             "type": "text",
-            "analyzer":"lowercase",
+            "analyzer": "lowercase",
             "fields": {
               "keyword": {
                 "type": "keyword",
                 "ignore_above": 256,
-                "normalizer":"lowercase"
+                "normalizer": "lowercase"
               }
             }
           },
@@ -157,12 +157,12 @@
                   },
                   "k": {
                     "type": "text",
-                    "analyzer":"lowercase",
+                    "analyzer": "lowercase",
                     "fields": {
                       "keyword": {
                         "type": "keyword",
                         "ignore_above": 256,
-                        "normalizer":"lowercase"
+                        "normalizer": "lowercase"
                       }
                     }
                   }
@@ -170,12 +170,12 @@
               },
               "language": {
                 "type": "text",
-                "analyzer":"lowercase",
+                "analyzer": "lowercase",
                 "fields": {
                   "keyword": {
                     "type": "keyword",
                     "ignore_above": 256,
-                    "normalizer":"lowercase"
+                    "normalizer": "lowercase"
                   }
                 }
               },
@@ -184,12 +184,12 @@
               },
               "name": {
                 "type": "text",
-                "analyzer":"lowercase",
+                "analyzer": "lowercase",
                 "fields": {
                   "keyword": {
                     "type": "keyword",
                     "ignore_above": 256,
-                    "normalizer":"lowercase"
+                    "normalizer": "lowercase"
                   }
                 }
               },
@@ -200,12 +200,12 @@
                   },
                   "k": {
                     "type": "text",
-                    "analyzer":"lowercase",
+                    "analyzer": "lowercase",
                     "fields": {
                       "keyword": {
                         "type": "keyword",
                         "ignore_above": 256,
-                        "normalizer":"lowercase"
+                        "normalizer": "lowercase"
                       }
                     }
                   },
@@ -221,12 +221,51 @@
                   },
                   "k": {
                     "type": "text",
-                    "analyzer":"lowercase",
+                    "analyzer": "lowercase",
                     "fields": {
                       "keyword": {
                         "type": "keyword",
                         "ignore_above": 100,
-                        "normalizer":"lowercase"
+                        "normalizer": "lowercase"
+                      }
+                    }
+                  }
+                }
+              },
+              "pkgs": {
+                "properties": {
+                  "c": {
+                    "type": "long"
+                  },
+                  "k": {
+                    "type": "text",
+                    "analyzer": "lowercase",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256,
+                        "normalizer": "lowercase"
+                      }
+                    }
+                  },
+                  "t": {
+                    "type": "text"
+                  }
+                }
+              },
+              "pkgs_kw": {
+                "properties": {
+                  "c": {
+                    "type": "long"
+                  },
+                  "k": {
+                    "type": "text",
+                    "analyzer": "lowercase",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 100,
+                        "normalizer": "lowercase"
                       }
                     }
                   }
@@ -247,12 +286,12 @@
               },
               "k": {
                 "type": "text",
-                "analyzer":"lowercase",
+                "analyzer": "lowercase",
                 "fields": {
                   "keyword": {
                     "type": "keyword",
                     "ignore_above": 20,
-                    "normalizer":"lowercase"
+                    "normalizer": "lowercase"
                   }
                 }
               }
@@ -260,12 +299,12 @@
           },
           "user_name": {
             "type": "text",
-            "analyzer":"lowercase",
+            "analyzer": "lowercase",
             "fields": {
               "keyword": {
                 "type": "keyword",
                 "ignore_above": 256,
-                "normalizer":"lowercase"
+                "normalizer": "lowercase"
               }
             }
           }
