@@ -31,12 +31,12 @@
       </thead>
       <tbody>
         {% for tech in engineer._source.report.tech | sort(attribute="language")%}
-        {% if tech.name!=".\.csproj$" %}
+        {% if tech.muncher_name!="csharp.csproj" %}
         <tr>
           <td scope="row">{{tech.language}}</th>
           <td>{{tech.files}}</td>
           <td>{{tech.code_lines}}</td>
-          <td>{% if tech.refs_kw is iterable %}{{tech.refs_kw | length}}{% endif %}</td>
+          <td>{% if tech.refs_kw is defined and tech.refs_kw is iterable %}{{tech.refs_kw | length}}{% endif %}</td>
         </tr>
         {% endif %}
         {% endfor %}

@@ -57,7 +57,6 @@
             <thead>
               <tr>
                 <th scope="col">Language</th>
-                <th scope="col">File type</th>
                 <th scope="col">File count</th>
                 <th scope="col">Lines of code</th>
                 <th scope="col">Libraries</th>
@@ -66,13 +65,12 @@
               </tr>
             </thead>
             <tbody>
-              {% for tech in user.report.tech | sort(attribute="language") | sort(attribute="name") %}
+              {% for tech in user.report.tech | sort(attribute="total_lines") | reverse %}
               <tr>
                 <td scope="row"><strong>{{tech.language}}</strong></td>
-                <td>{{tech.name | replace(from="$", to="") | replace(from=".\", to="")}}</td>
                 <td>{{tech.files}}</td>
                 <td>{{tech.code_lines}}</td>
-                <td>{% if tech.refs | length > 0 %}{{tech.refs | length}}{% endif %}</td>
+                <td>{% if tech.pkgs | length > 0 %}{{tech.pkgs | length}}{% endif %}</td>
                 <td>{% if tech.docs_comments > 0 %}{{tech.docs_comments}}{% endif %}</td>
                 <td>{% if tech.line_comments > 0 %}{{tech.line_comments}}{% endif %}</td>
               </tr>
@@ -86,14 +84,13 @@
           {% for proj in user.report.reports_included | sort %}
           {% set len = proj | length | int() %}
           <li class="pr-4 .text-nowrap list-inline-item">
-            {% set pname = proj | truncate(length=len-23, end="") | replace(from=user.report.user_name, to="") | replace(from="/", to="") %}
+            {% set pname = proj | truncate(length=len-7, end="") | replace(from=user.report.user_name, to="") | replace(from="/", to="") %}
             <a href="https://github.com/{{user.login}}/{{pname}}">{{pname}}</a>
           </li>
           {% endfor %}
         </ul>
 
         {% for tech in user.report.tech %}
-        {% if tech.name==".\.cs$" %}
         {% set col = tech.refs | length / 2 | int() %}
         <h3 class="mt-4">Libraries</h3>
         <div class="row">
@@ -125,13 +122,12 @@
           </div>
           <div class="col-lg-2 d-none d-lg-block">&nbsp;</div>
         </div>
-        {% endif %}
         {% endfor %}
 
         {% if user.report.unknown_file_types | length > 0 %}
         <h3 class="mt-4">Other files</h3>
         <ul class="list-inline">
-          {% for ftype in user.report.unknown_file_types | sort(attribute="k") %}
+          {% for ftype in user.report.unknown_file_types | sort(attribute="c") | reverse %}
           <li class="pr-4 .text-nowrap text-muted list-inline-item">
             {{ftype.k}}: <small>{{ftype.c}}</small></li>
           {% endfor %}
