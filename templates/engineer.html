@@ -91,8 +91,9 @@
         </ul>
 
         {% for tech in user.report.tech %}
+        {% if tech.refs | length > 0 %}
         {% set col = tech.refs | length / 2 | int() %}
-        <h3 class="mt-4">Libraries</h3>
+        <h3 class="mt-4">{{tech.language}} Libraries</h3>
         <div class="row">
 
           <div class="col-lg-5">
@@ -122,14 +123,16 @@
           </div>
           <div class="col-lg-2 d-none d-lg-block">&nbsp;</div>
         </div>
+        {% endif %}
         {% endfor %}
 
         {% if user.report.unknown_file_types | length > 0 %}
         <h3 class="mt-4">Other files</h3>
         <ul class="list-inline">
           {% for ftype in user.report.unknown_file_types | sort(attribute="c") | reverse %}
-          <li class="pr-4 .text-nowrap text-muted list-inline-item">
-            {{ftype.k}}: <small>{{ftype.c}}</small></li>
+          <li class="list-inline-item bg-light text-dark py-0 pl-1 rounded mb-2 border">{{ftype.k}}
+            <span class="badge badge-light ml-2 bg-white" style="font-weight: 300;">{{ftype.c}}</span>
+          </li>
           {% endfor %}
         </ul>
         {% endif %}

@@ -20,29 +20,13 @@
       </a>
       {% endif %}
     </p>
-    <table class="table">
-      <thead>
-        <tr>
-          <th scope="col"></th>
-          <th scope="col">Files</th>
-          <th scope="col">Lines</th>
-          <th scope="col">Packages</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for tech in engineer._source.report.tech | sort(attribute="language")%}
-        {% if tech.muncher_name!="csharp.csproj" %}
-        <tr>
-          <td scope="row">{{tech.language}}</th>
-          <td>{{tech.files}}</td>
-          <td>{{tech.code_lines}}</td>
-          <td>{% if tech.refs_kw is defined and tech.refs_kw is iterable %}{{tech.refs_kw | length}}{% endif %}</td>
-        </tr>
-        {% endif %}
-        {% endfor %}
-      </tbody>
-    </table>
-
+    <ul class="list-inline">
+      {% for tech in engineer._source.report.tech | sort(attribute="total_lines") | reverse %}
+      <li class="list-inline-item bg-light text-dark p-1 rounded mb-2 border">{{tech.language}}
+        <span class="badge badge-light ml-2 bg-white" style="font-weight: 300;">{{tech.total_lines}}</span>
+      </li>
+      {% endfor %}
+    </ul>
 
   </div>
 </div>
