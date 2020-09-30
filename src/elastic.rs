@@ -14,7 +14,7 @@ pub const USER_IDX: &str = "users";
 pub const SEARCH_TOTAL_HIREABLE: &str =
     r#"{"size":0,"aggregations":{"total_hireable":{"terms":{"field":"hireable"}}}}"#;
 pub const SEARCH_TOP_USERS: &str =
-    r#"{"size":24,"query":{"match_all":{}},"sort":[{"report.timestamp":{"order":"desc"}}]}"#;
+    r#"{"size":24,"query":{"match":{"hireable":{"query":"true"}}},"sort":[{"report.timestamp":{"order":"desc"}}]}"#;
 pub const SEARCH_TOTAL_REPORTS: &str = r#"{"size":0,"aggs":{"total_reports":{"value_count":{"field":"report.reports_included.keyword"}}}}"#;
 pub const SEARCH_TOTAL_TECHS: &str =
     r#"{"size":0,"aggs":{"stack_size":{"cardinality":{"field":"report.tech.language.keyword"}}}}"#;
