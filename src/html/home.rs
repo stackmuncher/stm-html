@@ -46,6 +46,7 @@ struct Report {
 #[derive(Deserialize, Debug)]
 struct Tech {
     refs_kw: Option<Vec<RefsKw>>,
+    pkgs_kw: Option<Vec<RefsKw>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -139,21 +140,32 @@ fn extract_keywords(engineer_list: &Value) -> Vec<RefsKw> {
         }
 
         for t in tech.unwrap() {
-            let refs_kw = t.refs_kw;
-            if refs_kw.is_none() {
-                // this may happen if there are relevant files with no meaningful content in the repo
-                continue;
+            // code files like .cs and .rs have references (use ...)
+            if let Some(refs_kw) = t.refs_kw {
+                for kw in refs_kw {
+                    // do not add rubbish ones, but log them for reference
+                    if rgx.is_match(&kw.k) {
+                        warn!("Invalid keyword: {}", kw.k);
+                        continue;
+                    }
+                    // add the keyword to the list and increment its counter
+                    *collector.entry(kw.k).or_insert(kw.c) += kw.c;
+                }
             }
 
-            // these are the keywords we are after
-            for kw in refs_kw.unwrap() {
-                // do not add rubbish ones, but log them for reference
-                if rgx.is_match(&kw.k) {
-                    warn!("Invalid keyword: {}", kw.k);
-                    continue;
+            // project level files have packages like .csproj or Cargo.toml
+            // it's unlikely to have both, pkgs and refs
+            if let Some(refs_kw) = t.pkgs_kw {
+                // these are the keywords we are after
+                for kw in refs_kw {
+                    // do not add rubbish ones, but log them for reference
+                    if rgx.is_match(&kw.k) {
+                        warn!("Invalid keyword: {}", kw.k);
+                        continue;
+                    }
+                    // add the keyword to the list of increment its counter
+                    *collector.entry(kw.k).or_insert(kw.c) += kw.c;
                 }
-                // add the keyword to the list of increment its counter
-                *collector.entry(kw.k).or_insert(kw.c) += kw.c;
             }
         }
     }
