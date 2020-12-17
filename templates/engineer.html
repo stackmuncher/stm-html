@@ -91,14 +91,19 @@
         </ul>
 
         {% for tech in user.report.tech %}
+        {% if tech.refs | length > 0 or tech.pkgs | length > 0 %}
         {% if tech.refs | length > 0 %}
-        {% set col = tech.refs | length / 2 | int() %}
+        {% set_global refs = tech.refs %}
+        {% else %}
+        {% set_global refs = tech.pkgs %}
+        {% endif %}
+        {% set col = refs | length / 2 | int() %}
         <h3 class="mt-4">{{tech.language}} Libraries</h3>
         <div class="row">
 
           <div class="col-lg-5">
             <dl class="row mb-0">
-              {% for ref in tech.refs | sort(attribute="k") | slice(start=0, end=col+1)  %}
+              {% for ref in refs | sort(attribute="k") | slice(start=0, end=col+1)  %}
               <dt class="col-11 text-truncate">
                 <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>
               </dt>
@@ -111,7 +116,7 @@
 
           <div class="col-lg-5">
             <dl class="row mb-0">
-              {% for ref in tech.refs | sort(attribute="k") | slice(start=col+1)  %}
+              {% for ref in refs | sort(attribute="k") | slice(start=col+1)  %}
               <dt class="col-11 text-truncate">
                 <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>
               </dt>
