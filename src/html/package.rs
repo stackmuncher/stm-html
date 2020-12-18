@@ -23,7 +23,6 @@ pub(crate) async fn html(tera: &Tera, es_url: String, package: String) -> Result
         .await?,
         package,
     };
-    //info!("R: {}", refs_page.to_string());
 
     let html = tera
         .render(

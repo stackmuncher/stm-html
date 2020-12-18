@@ -13,15 +13,15 @@ pub const USER_IDX: &str = "users";
 //pub const SEARCH_TOP_KEYWORDS: &str = r#"{"size":0,"aggs":{"refs":{"terms":{"field":"report.tech.refs_kw.k.keyword","exclude": ["System","TargetFramework","Microsoft","Text","0","1","2"],"size":100},"aggs":{"total":{"sum":{"field":"report.tech.refs_kw.c"}},"sort":{"bucket_sort":{"sort":["_key"]}}}}}}"#;
 pub const SEARCH_TOTAL_HIREABLE: &str =
     r#"{"size":0,"aggregations":{"total_hireable":{"terms":{"field":"hireable"}}}}"#;
-pub const SEARCH_TOP_USERS: &str =
-    r#"{"size":24,"query":{"match":{"hireable":{"query":"true"}}},"sort":[{"report.timestamp":{"order":"desc"}}]}"#;
+pub const SEARCH_TOP_USERS: &str = r#"{"size":24,"query":{"match":{"hireable":{"query":"true"}}},"sort":[{"report.timestamp":{"order":"desc"}}]}"#;
 pub const SEARCH_TOTAL_REPORTS: &str = r#"{"size":0,"aggs":{"total_reports":{"value_count":{"field":"report.reports_included.keyword"}}}}"#;
 pub const SEARCH_TOTAL_TECHS: &str =
     r#"{"size":0,"aggs":{"stack_size":{"cardinality":{"field":"report.tech.language.keyword"}}}}"#;
 pub const SEARCH_ENGINEER_BY_LOGIN: &str = r#"{"query":{"term":{"login.keyword":{"value":"%"}}}}"#;
 pub const SEARCH_REFS_BY_KEYWORD: &str = r#"{"size":0,"aggregations":{"refs":{"terms":{"field":"report.tech.refs.k.keyword","size":200,"include":"(.*\\.)?%.*"}}}}"#;
-pub const SEARCH_ENGINEER_BY_KEYWORD: &str = r#"{"size":24,"query":{"bool":{"filter":[{"term":{"report.tech.refs_kw.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
-pub const SEARCH_ENGINEER_BY_PACKAGE: &str = r#"{"size":24,"query":{"bool":{"filter":[{"term":{"report.tech.refs.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
+pub const SEARCH_PKGS_BY_KEYWORD: &str = r#"{"size":0,"aggregations":{"pkgs":{"terms":{"field":"report.tech.pkgs.k.keyword","size":200,"include":"(.*\\.)?%.*"}}}}"#;
+pub const SEARCH_ENGINEER_BY_KEYWORD: &str = r#"{"size":24,"query":{"bool":{"should":[{"term":{"report.tech.pkgs_kw.k.keyword":"%"}},{"term":{"report.tech.refs_kw.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
+pub const SEARCH_ENGINEER_BY_PACKAGE: &str = r#"{"size":24,"query":{"bool":{"should":[{"term":{"report.tech.pkgs.k.keyword":"%"}},{"term":{"report.tech.refs.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
 
 /// Run a search with the provided query
 pub(crate) async fn search(es_url: &String, query: Option<&str>) -> Result<Value, ()> {
@@ -40,11 +40,19 @@ pub(crate) async fn search(es_url: &String, query: Option<&str>) -> Result<Value
 //     call_es_api(es_api_endpoint, None).await
 // }
 
-/// Inserts a single param in the ES query
+/// Inserts a single param in the ES query. The param may be repeated within the query multiple times.
 pub(crate) fn add_param(query: &str, param: String) -> String {
-    let (left, right) = query.split_at(query.find("%").expect("Cannot split the query"));
+    let mut modded_query = query.to_string();
 
-    [left, param.as_str(), &right[1..]].concat().to_string()
+    // loop through the query until there are no more % to replace
+    while modded_query.contains("%") {
+        let (left, right) =
+            modded_query.split_at(modded_query.find("%").expect("Cannot split the query"));
+
+        modded_query = [left, param.as_str(), &right[1..]].concat().to_string();
+    }
+
+    modded_query
 }
 
 #[test]
