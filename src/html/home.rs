@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::elastic;
 use futures::future::join_all;
 use regex::Regex;
@@ -56,13 +57,29 @@ struct RefsKw {
 }
 
 /// Returns the default home page
-pub(crate) async fn html(tera: &Tera, es_url: String) -> Result<String, ()> {
+pub(crate) async fn html(tera: &Tera, config: &Config) -> Result<String, ()> {
     // prepare ES tasks
-    let total_count = elastic::search(&es_url, None);
-    let hireable_count = elastic::search(&es_url, Some(elastic::SEARCH_TOTAL_HIREABLE));
-    let stack_size = elastic::search(&es_url, Some(elastic::SEARCH_TOTAL_TECHS));
-    let reports_count = elastic::search(&es_url, Some(elastic::SEARCH_TOTAL_REPORTS));
-    let engineers = elastic::search(&es_url, Some(elastic::SEARCH_TOP_USERS));
+    let total_count = elastic::search(&config.es_url, &config.dev_idx, None);
+    let hireable_count = elastic::search(
+        &config.es_url,
+        &config.dev_idx,
+        Some(elastic::SEARCH_TOTAL_HIREABLE),
+    );
+    let stack_size = elastic::search(
+        &config.es_url,
+        &config.dev_idx,
+        Some(elastic::SEARCH_TOTAL_TECHS),
+    );
+    let reports_count = elastic::search(
+        &config.es_url,
+        &config.dev_idx,
+        Some(elastic::SEARCH_TOTAL_REPORTS),
+    );
+    let engineers = elastic::search(
+        &config.es_url,
+        &config.dev_idx,
+        Some(elastic::SEARCH_TOP_USERS),
+    );
 
     // execute all searches in parallel
     let futures = vec![

@@ -1,6 +1,7 @@
 #[cfg(not(debug_assertions))]
 use lambda::handler_fn;
 
+mod config;
 mod elastic;
 mod handler;
 mod html;
@@ -42,10 +43,8 @@ mod proxy {
     pub(crate) type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 
     const AWS_REGION: Region = Region::UsEast1; // replace with your preferred region
-    const REQUEST_QUEUE_URL: &str =
-        "https://sqs.us-east-1.amazonaws.com/028534811986/LAMBDA_PROXY_REQ"; // insert your queue URL here
-    const RESPONSE_QUEUE_URL: &str =
-        "https://sqs.us-east-1.amazonaws.com/028534811986/LAMBDA_PROXY_RESP"; // insert your queue URL here
+    const REQUEST_QUEUE_URL_ENV: &str = "STM_HTML_LAMBDA_PROXY_REQ"; // add your queue URL there
+    const RESPONSE_QUEUE_URL_ENV: &str = "STM_HTML_LAMBDA_PROXY_RESP"; // add your queue URL there
 
     #[derive(Deserialize, Debug)]
     struct RequestPayload {
@@ -77,7 +76,13 @@ mod proxy {
             let resp = client
                 .receive_message(ReceiveMessageRequest {
                     max_number_of_messages: Some(1),
-                    queue_url: REQUEST_QUEUE_URL.to_owned(),
+                    queue_url: std::env::var(REQUEST_QUEUE_URL_ENV)
+                        .expect(&format!(
+                            "Missing {} env var with the SQS request queue URL",
+                            REQUEST_QUEUE_URL_ENV
+                        ))
+                        .trim()
+                        .to_string(),
                     wait_time_seconds: Some(20),
                     ..Default::default()
                 })
@@ -117,7 +122,13 @@ mod proxy {
         client
             .send_message(SendMessageRequest {
                 message_body: response.to_string(),
-                queue_url: RESPONSE_QUEUE_URL.to_owned(),
+                queue_url: std::env::var(RESPONSE_QUEUE_URL_ENV)
+                    .expect(&format!(
+                        "Missing {} env var with the SQS response queue URL",
+                        RESPONSE_QUEUE_URL_ENV
+                    ))
+                    .trim()
+                    .to_string(),
                 ..Default::default()
             })
             .await?;
@@ -125,7 +136,13 @@ mod proxy {
         // delete the request msg from the queue so it cannot be replayed again
         client
             .delete_message(DeleteMessageRequest {
-                queue_url: REQUEST_QUEUE_URL.to_owned(),
+                queue_url: std::env::var(REQUEST_QUEUE_URL_ENV)
+                    .expect(&format!(
+                        "Missing {} env var with the SQS request queue URL",
+                        REQUEST_QUEUE_URL_ENV
+                    ))
+                    .trim()
+                    .to_string(),
                 receipt_handle,
             })
             .await?;

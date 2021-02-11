@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::elastic;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
@@ -14,7 +15,7 @@ struct RefsPage {
 }
 
 /// Returns package names containing the keyword and engineers using them
-pub(crate) async fn html(tera: &Tera, es_url: String, keyword: String) -> Result<String, ()> {
+pub(crate) async fn html(tera: &Tera, config: &Config, keyword: String) -> Result<String, ()> {
     // ES search requires it to be lower case
     let keyword = keyword.to_lowercase();
 
@@ -23,9 +24,9 @@ pub(crate) async fn html(tera: &Tera, es_url: String, keyword: String) -> Result
     let engineers_query = elastic::add_param(elastic::SEARCH_ENGINEER_BY_KEYWORD, keyword.clone());
 
     // prepare ES tasks
-    let refs = elastic::search(&es_url, Some(&refs_query));
-    let pkgs = elastic::search(&es_url, Some(&pkgs_query));
-    let engineers = elastic::search(&es_url, Some(&engineers_query));
+    let refs = elastic::search(&config.es_url, &config.dev_idx, Some(&refs_query));
+    let pkgs = elastic::search(&config.es_url, &config.dev_idx, Some(&pkgs_query));
+    let engineers = elastic::search(&config.es_url, &config.dev_idx, Some(&engineers_query));
 
     // execute all searches in parallel
     let futures = vec![refs, pkgs, engineers];

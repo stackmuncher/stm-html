@@ -41,7 +41,7 @@
           {% endif %}
 
           {% set init = user.report.date_init | date(format="%Y") | int() %}
-          {% set today = now() | date(format="%Y")  | int() %}
+          {% set today = now() | date(format="%Y") | int() %}
           <li class="mb-1"><strong>Code history</strong>: {% if today == init %}
             &lt; 1 year
             {% else %}
@@ -70,7 +70,7 @@
                 <td scope="row"><strong>{{tech.language}}</strong></td>
                 <td>{{tech.files}}</td>
                 <td>{{tech.code_lines}}</td>
-                <td>{% if tech.pkgs | length > 0 %}{{tech.pkgs | length}}{% endif %}</td>
+                <td>{% if tech.pkgs and tech.pkgs | length > 0 %}{{tech.pkgs | length}}{% endif %}</td>
                 <td>{% if tech.docs_comments > 0 %}{{tech.docs_comments}}{% endif %}</td>
                 <td>{% if tech.line_comments > 0 %}{{tech.line_comments}}{% endif %}</td>
               </tr>
@@ -84,18 +84,21 @@
           {% for proj in user.report.reports_included | sort %}
           {% set len = proj | length | int() %}
           <li class="pr-4 .text-nowrap list-inline-item">
-            {% set pname = proj | truncate(length=len-7, end="") | replace(from=user.report.user_name, to="") | replace(from="/", to="") %}
+            {% set pname = proj | truncate(length=len-7, end="") | replace(from=user.login, to="") | replace(from="/",
+            to="") %}
             <a href="https://github.com/{{user.login}}/{{pname}}">{{pname}}</a>
           </li>
           {% endfor %}
         </ul>
 
         {% for tech in user.report.tech %}
-        {% if tech.refs | length > 0 or tech.pkgs | length > 0 %}
+        {% if tech.refs and tech.refs | length > 0 %}
         {% if tech.refs | length > 0 %}
         {% set_global refs = tech.refs %}
-        {% else %}
+        {% elif tech.pkgs and tech.pkgs | length > 0 %}
         {% set_global refs = tech.pkgs %}
+        {% else %}
+        {% set_global refs = [] %}
         {% endif %}
         {% set col = refs | length / 2 | int() %}
         <h3 class="mt-4">{{tech.language}} Libraries</h3>
@@ -103,7 +106,7 @@
 
           <div class="col-lg-5">
             <dl class="row mb-0">
-              {% for ref in refs | sort(attribute="k") | slice(start=0, end=col+1)  %}
+              {% for ref in refs | sort(attribute="k") | slice(start=0, end=col+1) %}
               <dt class="col-11 text-truncate">
                 <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>
               </dt>
@@ -116,7 +119,7 @@
 
           <div class="col-lg-5">
             <dl class="row mb-0">
-              {% for ref in refs | sort(attribute="k") | slice(start=col+1)  %}
+              {% for ref in refs | sort(attribute="k") | slice(start=col+1) %}
               <dt class="col-11 text-truncate">
                 <a href="/_pkg/{{ref.k}}">{{ref.k}}</a>
               </dt>

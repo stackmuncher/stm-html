@@ -1,4 +1,4 @@
-use crate::{html, Error};
+use crate::{config::Config, html, Error};
 use lambda::Context;
 use rust_embed::RustEmbed;
 use serde::Serialize;
@@ -29,14 +29,13 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
     // get the path from the request
     let raw_path = event["rawPath"].as_str().unwrap_or_default().to_string();
 
-    // get ElasticSearch URL
-    let es_url = std::env::var("STACK_MUNCHER_ES_URL").expect("Missing STACK_MUNCHER_ES_URL");
-    let es_url = es_url.trim().trim_end_matches("/").to_string();
+    // get ElasticSearch URL and index names from env vars
+    let config = Config::new();
 
     let tera = tera_init()?;
 
     // do something useful here
-    let (html, ttl) = html::html(&tera, es_url, raw_path.clone())
+    let (html, ttl) = html::html(&tera, &config, raw_path.clone())
         .await
         .expect("html() failed");
 

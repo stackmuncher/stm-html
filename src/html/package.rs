@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::elastic;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -11,13 +12,14 @@ struct PackagePage {
 }
 
 /// Returns engineers using the package and related package names
-pub(crate) async fn html(tera: &Tera, es_url: String, package: String) -> Result<String, ()> {
+pub(crate) async fn html(tera: &Tera, config: &Config, package: String) -> Result<String, ()> {
     // ES search requires it to be lower case
     let package = package.to_lowercase();
 
     let pkg_page = PackagePage {
         engineers: elastic::search(
-            &es_url,
+            &config.es_url,
+            &config.dev_idx,
             Some(elastic::add_param(elastic::SEARCH_ENGINEER_BY_PACKAGE, package.clone()).as_str()),
         )
         .await?,

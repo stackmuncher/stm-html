@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::elastic;
 use serde::Serialize;
 use serde_json::Value;
@@ -15,10 +16,10 @@ struct DataHome {
 }
 
 /// Returns the default home page
-pub(crate) async fn html(tera: &Tera, es_url: String, login: String) -> Result<String, ()> {
+pub(crate) async fn html(tera: &Tera, config: &Config, login: String) -> Result<String, ()> {
     let query = elastic::add_param(elastic::SEARCH_ENGINEER_BY_LOGIN, login);
 
-    let eng: Value = elastic::search(&es_url, Some(query.as_str())).await?;
+    let eng: Value = elastic::search(&config.es_url, &config.dev_idx, Some(query.as_str())).await?;
 
     //info!("R: {}", eng.to_string());
 

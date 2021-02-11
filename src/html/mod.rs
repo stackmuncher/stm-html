@@ -1,3 +1,4 @@
+use crate::config::Config;
 use regex::Regex;
 use tera::Tera;
 use tracing::warn;
@@ -14,13 +15,12 @@ const TTL_PKG: i32 = 3600;
 const TTL_ENGINEER: i32 = 86400;
 const TTL_BAD_REQ: i32 = 86400;
 
-
 pub(crate) const KEYWORD_VALIDATION_REGEX: &str = "[^_0-9a-zA-Z]";
 
 /// Routes HTML requests to processing modules. Returns HTML response and TTL value in seconds.
 pub(crate) async fn html(
     tera: &Tera,
-    es_url: String,
+    config: &Config,
     raw_path: String,
 ) -> Result<(String, i32), ()> {
     // is the request too long?
@@ -31,7 +31,7 @@ pub(crate) async fn html(
 
     // is it a homepage?
     if raw_path.len() < 2 {
-        return Ok((home::html(tera, es_url).await?, TTL_HOME));
+        return Ok((home::html(tera, config).await?, TTL_HOME));
     }
 
     // a single keyword, e.g. System or Microsoft
@@ -52,7 +52,7 @@ pub(crate) async fn html(
             warn!("Invalid keyword: {}", raw_path);
             return Ok(("".to_owned(), TTL_BAD_REQ));
         }
-        return Ok((keyword::html(tera, es_url, kw).await?, TTL_KW));
+        return Ok((keyword::html(tera, config, kw).await?, TTL_KW));
     }
 
     // a single package, e.g. System.Text.Regex
@@ -70,7 +70,7 @@ pub(crate) async fn html(
             warn!("Invalid package: {}", raw_path);
             return Ok(("".to_owned(), TTL_BAD_REQ));
         }
-        return Ok((package::html(tera, es_url, pkg).await?, TTL_PKG));
+        return Ok((package::html(tera, config, pkg).await?, TTL_PKG));
     }
 
     // it must be an engineer id, e.g. rimutaka
@@ -89,5 +89,5 @@ pub(crate) async fn html(
         return Ok(("".to_owned(), TTL_BAD_REQ));
     }
 
-    return Ok((engineer::html(tera, es_url, login).await?, TTL_ENGINEER));
+    return Ok((engineer::html(tera, config, login).await?, TTL_ENGINEER));
 }
