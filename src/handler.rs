@@ -1,10 +1,11 @@
 use crate::{config::Config, html, Error};
 use lambda::Context;
 use rust_embed::RustEmbed;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use tera::Tera;
+use tracing::{info, warn};
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -17,6 +18,13 @@ struct ApiGatewayResponse {
     body: String,
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct ApiGatewayRequest {
+    raw_path: String,
+    headers: HashMap<String, String>,
+}
+
 #[derive(RustEmbed)]
 #[folder = "templates"]
 struct Asset;
@@ -26,8 +34,25 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
     //info!("Event: {}", event);
     //info!("Context: {:?}", ctx);
 
-    // get the path from the request
-    let raw_path = event["rawPath"].as_str().unwrap_or_default().to_string();
+    let api_request =
+        serde_json::from_value::<ApiGatewayRequest>(event).expect("Failed to deser APIGW request");
+
+    // if Authorization env var is present check if it matches Authorization header
+    // this is done for basic protection against direct calls to the api bypassing CloudFront
+    if let Ok(auth_var) = std::env::var("Authorization") {
+        let auth_header = match api_request.headers.get("authorization") {
+            Some(v) => v.clone(),
+            None => String::new(),
+        };
+
+        if auth_var != auth_header {
+            warn!("Unauthorized. Header: {}", auth_header);
+            return gw_response("Unauthorized".to_owned(), 403, 3600);
+        }
+    } else {
+        #[cfg(debug_assertions)]
+        info!("No Authorization env var - all requests are allowed");
+    };
 
     // get ElasticSearch URL and index names from env vars
     let config = Config::new();
@@ -35,13 +60,13 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
     let tera = tera_init()?;
 
     // do something useful here
-    let (html, ttl) = html::html(&tera, &config, raw_path.clone())
+    let (html, ttl) = html::html(&tera, &config, api_request.raw_path.clone())
         .await
         .expect("html() failed");
 
     // an empty response = validation problems -> return 404
     if html.is_empty() {
-        let html = html::error_404::html(&tera, raw_path)
+        let html = html::error_404::html(&tera, api_request.raw_path)
             .await
             .expect("Failed to produce 404 page");
         return gw_response(html, 404, ttl);

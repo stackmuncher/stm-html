@@ -24,6 +24,12 @@ cp ./target/x86_64-unknown-linux-musl/release/stm-html ./bootstrap && zip proxy.
 aws lambda update-function-code --region us-east-1 --function-name stm-html --zip-file fileb://proxy.zip
 ```
 
+#### Authorizer
+
+This lambda checks every request for `Authorization` header if `Authorization` env variable was set with a value. The processing goes ahead only if the header matches the env var value.
+
+The standard approach for authorizing APIGW requests would be IAM or a separate authorizer function, but the only reason we need to restrict access is to make sure the API is called via CloudFront to enable caching and AWS WAF. Apparently, there is no way to include CloudFront in an APIGW Lambda policy and adding `Authorization` header to the CloudFront origin is next best option.
+
 #### API Gateway
 
 * HTTP API with Lambda
