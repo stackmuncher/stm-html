@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use tera::Tera;
-use tracing::{info, warn};
+use tracing::warn;
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -51,7 +51,7 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
         }
     } else {
         #[cfg(debug_assertions)]
-        info!("No Authorization env var - all requests are allowed");
+        warn!("No Authorization env var - all requests are allowed");
     };
 
     // get ElasticSearch URL and index names from env vars
