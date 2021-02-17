@@ -1,5 +1,7 @@
 /// Add the name of the ElasticSearch index to that env var
 pub const ES_DEV_IDX_ENV: &str = "STM_HTML_ES_DEV_IDX";
+/// Add the name of the ElasticSearch index to that env var
+pub const ES_REPO_IDX_ENV: &str = "STM_HTML_ES_REPO_IDX";
 /// Add the absolute ElasticSearch URL to that env var
 pub const ES_URL_ENV: &str = "STM_HTML_ES_URL";
 
@@ -8,6 +10,8 @@ pub struct Config {
     pub es_url: String,
     /// Name of `dev` index
     pub dev_idx: String,
+    /// Name of `repo` index
+    pub repo_idx: String,
 }
 
 impl Config {
@@ -25,6 +29,13 @@ impl Config {
                 .expect(&format!(
                     "Missing {} env var with ES DEV index name",
                     ES_DEV_IDX_ENV
+                ))
+                .trim()
+                .to_string(),
+            repo_idx: std::env::var(ES_REPO_IDX_ENV)
+                .expect(&format!(
+                    "Missing {} env var with ES REPO index name",
+                    ES_REPO_IDX_ENV
                 ))
                 .trim()
                 .to_string(),

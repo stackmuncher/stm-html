@@ -12,8 +12,9 @@
         <ul class="mt-3 pl-3">
           <li class="mb-1"><strong>Software engineers</strong>: <i>{{total_count.count}}</i></li>
           <li class="mb-1"><strong>Open to work</strong>:
-            <i>{{hireable_count.aggregations.total_hireable.buckets[0].doc_count}}</i></li>
-          <li class="mb-1"><strong>Projects</strong>: <i>{{reports_count.aggregations.total_reports.value}}</i></li>
+            <i>{{hireable_count.aggregations.total_hireable.buckets[0].doc_count}}</i>
+          </li>
+          <li class="mb-1"><strong>Projects</strong>: <i>{{repo_count.count}}</i></li>
           <li class="mb-1"><strong>Stack size</strong>: <i>{{stack_size.aggregations.stack_size.value}}</i></li>
         </ul>
 

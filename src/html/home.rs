@@ -13,7 +13,7 @@ struct DataHome {
     total_count: Value,
     hireable_count: Value,
     stack_size: Value,
-    reports_count: Value,
+    repo_count: Value,
     top_keywords: Value,
     engineers: Value,
 }
@@ -70,11 +70,7 @@ pub(crate) async fn html(tera: &Tera, config: &Config) -> Result<String, ()> {
         &config.dev_idx,
         Some(elastic::SEARCH_TOTAL_TECHS),
     );
-    let reports_count = elastic::search(
-        &config.es_url,
-        &config.dev_idx,
-        Some(elastic::SEARCH_TOTAL_REPORTS),
-    );
+    let repo_count = elastic::search(&config.es_url, &config.repo_idx, None);
     let engineers = elastic::search(
         &config.es_url,
         &config.dev_idx,
@@ -86,7 +82,7 @@ pub(crate) async fn html(tera: &Tera, config: &Config) -> Result<String, ()> {
         total_count,
         hireable_count,
         stack_size,
-        reports_count,
+        repo_count,
         engineers,
     ];
     let mut resp = join_all(futures).await;
@@ -95,7 +91,7 @@ pub(crate) async fn html(tera: &Tera, config: &Config) -> Result<String, ()> {
     let total_count = resp.remove(0)?;
     let hireable_count = resp.remove(0)?;
     let stack_size = resp.remove(0)?;
-    let reports_count = resp.remove(0)?;
+    let repo_count = resp.remove(0)?;
     let engineers = resp.remove(0)?;
     // note, total_count has a different Fn signature and could not be added to join_all
 
@@ -107,7 +103,7 @@ pub(crate) async fn html(tera: &Tera, config: &Config) -> Result<String, ()> {
         total_count,
         hireable_count,
         stack_size,
-        reports_count,
+        repo_count,
         top_keywords,
         engineers,
     };

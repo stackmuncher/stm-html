@@ -12,7 +12,6 @@ use tracing::{debug, error, info};
 pub const SEARCH_TOTAL_HIREABLE: &str =
     r#"{"size":0,"aggregations":{"total_hireable":{"terms":{"field":"hireable"}}}}"#;
 pub const SEARCH_TOP_USERS: &str = r#"{"size":24,"query":{"match":{"hireable":{"query":"true"}}},"sort":[{"report.timestamp":{"order":"desc"}}]}"#;
-pub const SEARCH_TOTAL_REPORTS: &str = r#"{"size":0,"aggs":{"total_reports":{"value_count":{"field":"report.reports_included.keyword"}}}}"#;
 pub const SEARCH_TOTAL_TECHS: &str =
     r#"{"size":0,"aggs":{"stack_size":{"cardinality":{"field":"report.tech.language.keyword"}}}}"#;
 pub const SEARCH_ENGINEER_BY_LOGIN: &str = r#"{"query":{"term":{"login.keyword":{"value":"%"}}}}"#;
@@ -38,12 +37,6 @@ pub(crate) async fn search(
         return call_es_api(es_api_endpoint, None).await;
     }
 }
-
-// /// Count number of docs in the index
-// pub(crate) async fn count(es_url: &String) -> Result<Value, ()> {
-//     let es_api_endpoint = [es_url.as_ref(), "/", USER_IDX, "/_count"].concat();
-//     call_es_api(es_api_endpoint, None).await
-// }
 
 /// Inserts a single param in the ES query. The param may be repeated within the query multiple times.
 pub(crate) fn add_param(query: &str, param: String) -> String {
