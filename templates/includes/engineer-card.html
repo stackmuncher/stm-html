@@ -2,10 +2,10 @@
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center" width="100%" height="50">
       <h5 class="card-title ma-1"><a href="/{{engineer._source.login}}">
-          {% if engineer._source.name %}
-          {{engineer._source.name}}
+          {% if engineer._source.id %}
+          Dev #{{engineer._source.id}}
           {% else %}
-          Anonymous Engineer
+          {{engineer._source.login}}
           {% endif %}
         </a>
       </h5>
@@ -16,14 +16,14 @@
       {{ today - init + 1}}+ years
       {% if engineer._source.hireable %}
       <a href="/{{engineer._source.login}}">
-        <span class="badge badge-success float-right">Hire me</span>
+        <span class="badge bg-success float-right">Hire me</span>
       </a>
       {% endif %}
     </p>
     <ul class="list-inline">
       {% for tech in engineer._source.report.tech | sort(attribute="total_lines") | reverse %}
       <li class="list-inline-item bg-light text-dark p-1 rounded mb-2 border">{{tech.language}}
-        <span class="badge badge-light ml-2 bg-white" style="font-weight: 300;">{{tech.total_lines}}</span>
+        <span class="badge bg-white text-dark ms-2" style="font-weight: 300;">{{tech.total_lines}}</span>
       </li>
       {% endfor %}
     </ul>
