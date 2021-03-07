@@ -2,27 +2,30 @@
 <html lang="en">
 
 {% include "includes/head.html" %}
-{% set refs = refs.aggregations.refs.buckets | concat(with=pkgs.aggregations.pkgs.buckets) | unique(attribute="key") %}
+{#% set refs = refs.aggregations.refs.buckets | concat(with=pkgs.aggregations.pkgs.buckets) | unique(attribute="key") %#}
 
 <body>
   {% include "includes/top-nav.html" %}
   <div class="container-fluid">
     <div class="row">
       <div class="col-lg-3 col-md-4">
-        <h1><small><code>{{keyword}}</code></small></h1>
+        <h1><small><code>{{keywords_str}}</code></small></h1>
         <ul class="mt-3 ps-3">
-          <li class="mb-1">Used by <i>{{engineers.hits.total.value}}</i> engineers</li>
+          <li class="mb-1">Used by <i>{{devs.hits.total.value}}</i> devs</li>
+          {% if refs %}
           <li class="mb-1">Mentioned in
             {% if refs | length > 199 %}
             more than
             {% endif %}
-            {{refs | length}} packages</li>
+            {{refs | length}} packages
+          </li>
+          {% endif %}
         </ul>
 
         {% include "includes/truncated_search_msg.html" %}
         {% include "includes/no_names_msg.html" %}
 
-        {% if refs | length > 0 %}
+        {% if refs %}
         <h3>Related packages</h3>
         <ul class="list-unstyled">
           {% for ref in refs | sort(attribute="key") %}
@@ -35,11 +38,10 @@
           </li>
           {% endfor %}
         </ul>
-        {% else %}
+        {% elif devs.hits.hits | length == 0 %}
         <h3>Not found</h3>
-        <p>New engineer reports are added every few minutes.</p>
-        <p>Registered users can set up alerts for package use by engineers. <a
-            href="mailto:info@stackmuncher.com">Contact us</a>
+        <p>New dev reports are added every few minutes.</p>
+        <p>Registered users can set up alerts for package use by devs. <a href="mailto:info@stackmuncher.com">Contact us</a>
           for full access.</p>
         {% endif %}
       </div>
@@ -47,9 +49,9 @@
       <div class="col-lg-9 col-md-8">
         <main role="main">
           <div class="row">
-            {% for engineer in engineers.hits.hits %}
+            {% for dev in devs.hits.hits %}
             <div class="col-lg-4">
-              {% include "includes/engineer-card.html" %}
+              {% include "includes/dev-card.html" %}
             </div>
             {% endfor %}
           </div>

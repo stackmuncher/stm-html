@@ -19,8 +19,8 @@
         </ul>
       </div>
       <div class="d-flex my-2 my-lg-0">
-        <input class="form-control me-2" type="search" placeholder="Package or library name" title="Find devs working with a particular package, library or API, e.g. Twilio. Use 3 to 20 letters, numbers or underscore." aria-label="Find devs working with a particular package, library or API, e.g. Twilio. Use 3 to 20 letters, numbers or underscore." id="kw" minlength="3" maxlength="20" pattern="[_0-9a-zA-Z]{3,20}" onkeydown="if (event.keyCode===13) document.getElementById('btn').click()">
-        <button class="btn btn-outline-success my-2 my-sm-0" type="button" id="btn" autocomplete="off" onclick="const v=document.getElementById('kw'); if (v.validity.valid) window.location.href='/_kw/'+v.value">Search</button>
+        <input class="form-control me-2" type="search" placeholder="Language + lib names or keywords" title="Find devs working with a particular language, library or API, e.g. C# + Twilio + Azure." id="kw" minlength="3" maxlength="100" onkeydown="if (event.keyCode===13) document.getElementById('btn').click()">
+        <button class="btn btn-outline-success my-2 my-sm-0" type="button" id="btn" autocomplete="off" onclick="const v=document.getElementById('kw'); if (v.validity.valid) window.location.href='/?'+v.value">Search</button>
       </div>
     </div>
   </div>

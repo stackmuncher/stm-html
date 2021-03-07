@@ -1,55 +1,52 @@
+use super::teradata::TeraData;
 use crate::config::Config;
 use crate::elastic;
-use futures::future::join_all;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use tera::{Context, Tera};
 use tracing::info;
 
-#[derive(Serialize, Deserialize)]
-struct RefsPage {
-    refs: Value,
-    pkgs: Value,
-    engineers: Value,
-    keyword: String,
-}
-
 /// Returns package names containing the keyword and engineers using them
-pub(crate) async fn html(tera: &Tera, config: &Config, keyword: String) -> Result<String, ()> {
-    // ES search requires it to be lower case
-    let keyword = keyword.to_lowercase();
+pub(crate) async fn html(
+    tera: &Tera,
+    config: &Config,
+    keywords: Vec<String>,
+    lang: Option<String>,
+    tera_data: TeraData,
+) -> Result<String, ()> {
+    info!("Generating html-keyword");
+    info!("KWs: {:?}", keywords);
+    info!("Lang: {:?}", lang);
 
-    let refs_query = elastic::add_param(elastic::SEARCH_REFS_BY_KEYWORD, keyword.clone());
-    let pkgs_query = elastic::add_param(elastic::SEARCH_PKGS_BY_KEYWORD, keyword.clone());
-    let engineers_query = elastic::add_param(elastic::SEARCH_ENGINEER_BY_KEYWORD, keyword.clone());
+    let devs = elastic::matching_devs(
+        &config.es_url,
+        &config.dev_idx,
+        keywords.clone(),
+        lang.clone(),
+        &config.no_sql_string_invalidation_regex,
+    )
+    .await?;
 
-    // prepare ES tasks
-    let refs = elastic::search(&config.es_url, &config.dev_idx, Some(&refs_query));
-    let pkgs = elastic::search(&config.es_url, &config.dev_idx, Some(&pkgs_query));
-    let engineers = elastic::search(&config.es_url, &config.dev_idx, Some(&engineers_query));
+    // pre-build search terms as a string for simplified presentation
+    // it should present them all as a list, but for now it uses a simple string
+    let mut combined_search_terms = keywords.clone();
+    if let Some(v) = lang.clone() {
+        combined_search_terms.insert(0, v);
+    }
+    let combined_search_terms = combined_search_terms.join(" ");
 
-    // execute all searches in parallel
-    let futures = vec![refs, pkgs, engineers];
-    let mut resp = join_all(futures).await;
-
-    // restore the results from the response vector removing them one by one
-    let refs = resp.remove(0)?;
-    let pkgs = resp.remove(0)?;
-    let engineers = resp.remove(0)?;
-
-    let refs_page = RefsPage {
-        refs,
-        pkgs,
-        engineers,
-        keyword: keyword,
+    // put everything together for Tera
+    let tera_data = TeraData {
+        devs: Some(devs),
+        keywords,
+        lang: lang,
+        keywords_str: Some(combined_search_terms),
+        ..tera_data
     };
-    //info!("R: {}", refs_page.to_string());
 
     let html = tera
         .render(
             "keyword.html",
             &Context::from_value(
-                serde_json::to_value(refs_page).expect("Failed to serialize RefsPage"),
+                serde_json::to_value(tera_data).expect("Failed to serialize SearchResults"),
             )
             .expect("Cannot create context"),
         )

@@ -1,22 +1,12 @@
+use super::teradata::{RelatedKeywords, TeraData, Stats, StatsRecord};
 use crate::config::Config;
 use crate::elastic;
-use futures::future::join_all;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use tera::{Context, Tera};
 use tracing::{info, warn};
-
-#[derive(Serialize)]
-struct DataHome {
-    total_count: Value,
-    hireable_count: Value,
-    stack_size: Value,
-    repo_count: Value,
-    top_keywords: Value,
-    engineers: Value,
-}
 
 #[derive(Deserialize, Debug)]
 struct EngListResp {
@@ -46,73 +36,51 @@ struct Report {
 
 #[derive(Deserialize, Debug)]
 struct Tech {
-    refs_kw: Option<Vec<RefsKw>>,
-    pkgs_kw: Option<Vec<RefsKw>>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct RefsKw {
-    k: String,
-    c: usize,
+    refs_kw: Option<Vec<RelatedKeywords>>,
+    pkgs_kw: Option<Vec<RelatedKeywords>>,
 }
 
 /// Returns the default home page
-pub(crate) async fn html(tera: &Tera, config: &Config) -> Result<String, ()> {
-    // prepare ES tasks
-    let total_count = elastic::search(&config.es_url, &config.dev_idx, None);
-    let hireable_count = elastic::search(
-        &config.es_url,
-        &config.dev_idx,
-        Some(elastic::SEARCH_TOTAL_HIREABLE),
-    );
-    let stack_size = elastic::search(
-        &config.es_url,
-        &config.dev_idx,
-        Some(elastic::SEARCH_TOTAL_TECHS),
-    );
-    let repo_count = elastic::search(&config.es_url, &config.repo_idx, None);
-    let engineers = elastic::search(
+pub(crate) async fn html(tera: &Tera, config: &Config, tera_data: TeraData) -> Result<String, ()> {
+    info!("Generating html-home");
+
+    // grab a bunch of latest additions and updates to dev idx
+    let devs = elastic::search(
         &config.es_url,
         &config.dev_idx,
         Some(elastic::SEARCH_TOP_USERS),
-    );
+    )
+    .await?;
 
-    // execute all searches in parallel
-    let futures = vec![
-        total_count,
-        hireable_count,
-        stack_size,
-        repo_count,
-        engineers,
-    ];
-    let mut resp = join_all(futures).await;
+    // get stats
+    // just dummy stats for now - not sure what the best way of retrieving them is
+    let stats_record = vec![ StatsRecord {
+        ts: 0,
+        iso: String::new(),
+        c: 1
+    }];
+    let stats = Stats {
+        repo: stats_record.clone(),
+        contributor: stats_record.clone(),
+        dev: stats_record.clone(),
+        stack: stats_record.clone(),
+        hireable: stats_record.clone(),
 
-    // restore the results
-    let total_count = resp.remove(0)?;
-    let hireable_count = resp.remove(0)?;
-    let stack_size = resp.remove(0)?;
-    let repo_count = resp.remove(0)?;
-    let engineers = resp.remove(0)?;
-    // note, total_count has a different Fn signature and could not be added to join_all
+    };
 
-    let top_keywords: Value = serde_json::to_value(extract_keywords(&engineers))
-        .expect("Cannot convert HashSet with ref_kw to Value");
-    info!("top_keywords extracted");
-
-    let data_home = DataHome {
-        total_count,
-        hireable_count,
-        stack_size,
-        repo_count,
-        top_keywords,
-        engineers,
+    // combine everything together for Tera
+    let tera_data = TeraData {
+        related: Some(extract_keywords(&devs)),
+        devs: Some(devs),
+        stats: Some(stats),
+        ..tera_data
     };
 
     let html = tera
         .render(
             "home.html",
             &Context::from_value(
-                serde_json::to_value(data_home).expect("Failed to serialize data_home"),
+                serde_json::to_value(tera_data).expect("Failed to serialize tera_data"),
             )
             .expect("Cannot create context"),
         )
@@ -124,7 +92,7 @@ pub(crate) async fn html(tera: &Tera, config: &Config) -> Result<String, ()> {
 }
 
 /// Extracts ref_kw from all engineers and returns a unique list
-fn extract_keywords(engineer_list: &Value) -> Vec<RefsKw> {
+fn extract_keywords(engineer_list: &Value) -> Vec<RelatedKeywords> {
     let mut collector: HashMap<String, usize> = HashMap::new();
     let rgx = Regex::new(crate::html::KEYWORD_VALIDATION_REGEX).expect("Wrong _kw regex!");
 
@@ -184,9 +152,9 @@ fn extract_keywords(engineer_list: &Value) -> Vec<RefsKw> {
     }
 
     // convert to a vector of `{k:"", c:""}`
-    let mut ref_kws: Vec<RefsKw> = collector
+    let mut ref_kws: Vec<RelatedKeywords> = collector
         .iter()
-        .map(|(k, c)| RefsKw {
+        .map(|(k, c)| RelatedKeywords {
             k: k.clone(),
             c: c.clone(),
         })
@@ -194,6 +162,8 @@ fn extract_keywords(engineer_list: &Value) -> Vec<RefsKw> {
 
     // sort by keyword, case-insensitive
     ref_kws.sort_by(|a, b| a.k.to_lowercase().cmp(&b.k.to_lowercase()));
+
+    info!("Dev keywords extracted");
 
     ref_kws
 }

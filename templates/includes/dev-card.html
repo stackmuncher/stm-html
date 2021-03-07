@@ -1,29 +1,29 @@
 <div class="card mb-4">
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center" width="100%" height="50">
-      <h5 class="card-title ma-1"><a href="/{{engineer._source.login}}">
+      <h5 class="card-title ma-1"><a href="/{{dev._source.login}}">
         {% if keyword or package %}
-          Dev #{{engineer._source.id}}
-          {% elif engineer._source.name %}
-          {{engineer._source.name}}
+          Dev #{{dev._source.id}}
+          {% elif dev._source.name %}
+          {{dev._source.name}}
           {% else %}
-          {{engineer._source.login}}
+          {{dev._source.login}}
           {% endif %}
         </a>
       </h5>
     </div>
-    {% set init = engineer._source.report.date_init | date(format="%Y") | int() %}
+    {% set init = dev._source.report.date_init | date(format="%Y") | int() %}
     {% set today = now() | date(format="%Y")  | int() %}
-    <p class="card-subtitle mb-2 text-muted">{{engineer._source.public_repos}} projects over
+    <p class="card-subtitle mb-2 text-muted">{{dev._source.public_repos}} projects over
       {{ today - init + 1}}+ years
-      {% if engineer._source.hireable %}
-      <a href="/{{engineer._source.login}}">
+      {% if dev._source.hireable %}
+      <a href="/{{dev._source.login}}">
         <span class="badge bg-success float-right">Hire me</span>
       </a>
       {% endif %}
     </p>
     <ul class="list-inline">
-      {% for tech in engineer._source.report.tech | sort(attribute="total_lines") | reverse %}
+      {% for tech in dev._source.report.tech | sort(attribute="total_lines") | reverse %}
       <li class="list-inline-item bg-light text-dark p-1 rounded mb-2 border">{{tech.language}}
         <span class="badge bg-white text-dark ms-2" style="font-weight: 300;">{{tech.total_lines}}</span>
       </li>

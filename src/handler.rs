@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use tera::Tera;
-use tracing::warn;
+use tracing::{warn, info};
+use urlencoding::decode;
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -22,6 +23,7 @@ struct ApiGatewayResponse {
 #[serde(rename_all = "camelCase")]
 struct ApiGatewayRequest {
     raw_path: String,
+    raw_query_string: String,
     headers: HashMap<String, String>,
 }
 
@@ -59,8 +61,15 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
 
     let tera = tera_init()?;
 
+    // decode possible URL path and query string
+    info!("Path: {}", &api_request.raw_path);
+    info!("Query: {}", &api_request.raw_query_string);
+    let url_path = decode(&api_request.raw_path).unwrap_or_default();
+    let url_query = decode(&api_request.raw_query_string).unwrap_or_default();
+    info!("Path: {}", url_path);
+    info!("Query: {}", url_query);
     // do something useful here
-    let (html, ttl) = html::html(&tera, &config, api_request.raw_path.clone())
+    let (html, ttl) = html::html(&tera, &config, url_path,url_query)
         .await
         .expect("html() failed");
 

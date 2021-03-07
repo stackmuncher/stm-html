@@ -7,9 +7,9 @@
   {% include "includes/top-nav.html" %}
   <div class="container-fluid">
     <div class="row">
-      {% if hits.hits | length > 0 %}
+      {% if devs.hits.hits | length > 0 %}
       <div class="col-md-3">
-        {% for hit in hits.hits %}
+        {% for hit in devs.hits.hits %}
         {% set user = hit._source %}
 
         <h1><small>{% if user.name %}{{user.name}}{% else %}{{user.login}}{% endif %}</small></h1>

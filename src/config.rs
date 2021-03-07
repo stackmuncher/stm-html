@@ -1,3 +1,5 @@
+use regex::Regex;
+
 /// Add the name of the ElasticSearch index to that env var
 pub const ES_DEV_IDX_ENV: &str = "STM_HTML_ES_DEV_IDX";
 /// Add the name of the ElasticSearch index to that env var
@@ -12,6 +14,8 @@ pub struct Config {
     pub dev_idx: String,
     /// Name of `repo` index
     pub repo_idx: String,
+    /// No-SQL field value validation regex - the value would be invalid if it's a match
+    pub no_sql_string_invalidation_regex: Regex,
 }
 
 impl Config {
@@ -39,6 +43,8 @@ impl Config {
                 ))
                 .trim()
                 .to_string(),
+            no_sql_string_invalidation_regex: Regex::new(r#"[^#\-\._0-9a-zA-Z]"#)
+                .expect("Failed to compile no_sql_string_value_regex"),
         }
     }
 }
