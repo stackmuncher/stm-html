@@ -1,37 +1,23 @@
 use crate::config::Config;
 use crate::elastic;
 use regex::Regex;
-use tera::Tera;
 use teradata::TeraData;
 use tracing::{info, warn};
 
 mod dev;
-pub(crate) mod error_404;
 mod home;
 mod keyword;
 mod teradata;
 // mod package;
 
-const TTL_HOME: i32 = 600;
-const TTL_KW: i32 = 3600;
-const TTL_ENGINEER: i32 = 86400;
-const TTL_BAD_REQ: i32 = 86400;
-
 pub(crate) const KEYWORD_VALIDATION_REGEX: &str = r#"[^\-_0-9a-zA-Z]"#;
 
 /// Routes HTML requests to processing modules. Returns HTML response and TTL value in seconds.
 pub(crate) async fn html(
-    tera: &Tera,
     config: &Config,
     url_path: String,
     url_query: String,
-) -> Result<(String, i32), ()> {
-    // is the request too long or is it for some resource related to the static pages?
-    if url_path.len() > 100 || url_path.starts_with("/about/") {
-        warn!("Very long request: {}", url_path);
-        return Ok(("".to_owned(), TTL_BAD_REQ));
-    }
-
+) -> Result<TeraData, ()> {
     // prepare a common structure for feeding into Tera templates
     let tera_data = TeraData {
         raw_search: url_query.clone(),
@@ -41,7 +27,16 @@ pub(crate) async fn html(
         lang: None,
         keywords_str: None,
         stats: None,
+        template_name: "404.html".to_owned(),
+        ttl: 600,
+        http_resp_code: 404,
     };
+
+    // is the request too long or is it for some resource related to the static pages?
+    if url_path.len() > 100 || url_path.starts_with("/about/") {
+        warn!("Very long or /about/ request: {}", url_path);
+        return Ok(tera_data);
+    }
 
     // check if there is a path - it can be the developer login
     // there shouldn't be any other paths at this stage
@@ -57,14 +52,11 @@ pub(crate) async fn html(
         // is it a valid format for a dev login?
         if config.no_sql_string_invalidation_regex.is_match(&login) {
             warn!("Invalid dev login: {}", url_path);
-            return Ok(("".to_owned(), TTL_BAD_REQ));
+            return Ok(tera_data);
         }
 
         // return dev profile page
-        return Ok((
-            dev::html(tera, config, login, tera_data).await?,
-            TTL_ENGINEER,
-        ));
+        return Ok(dev::html(config, login, tera_data).await?);
     }
 
     // is there something in the query string?
@@ -102,28 +94,19 @@ pub(crate) async fn html(
 
             // return a dev profile if there is a match
             if counts[0] == 1 {
-                return Ok((
-                    dev::html(tera, config, search_terms[0].clone(), tera_data).await?,
-                    TTL_ENGINEER,
-                ));
+                return Ok(dev::html(config, search_terms[0].clone(), tera_data).await?);
             } else if counts[1] > 0 {
-                return Ok((
-                    keyword::html(
-                        tera,
-                        config,
-                        Vec::new(),
-                        Some(search_terms[0].clone()),
-                        tera_data,
-                    )
-                    .await?,
-                    TTL_KW,
-                ));
+                return Ok(keyword::html(
+                    config,
+                    Vec::new(),
+                    Some(search_terms[0].clone()),
+                    tera_data,
+                )
+                .await?);
             } else {
-                return Ok((
-                    keyword::html(tera, config, vec![search_terms[0].clone()], None, tera_data)
-                        .await?,
-                    TTL_KW,
-                ));
+                return Ok(
+                    keyword::html(config, vec![search_terms[0].clone()], None, tera_data).await?,
+                );
             }
         }
         // multipart search
@@ -159,13 +142,10 @@ pub(crate) async fn html(
             }
 
             // run a keyword search
-            return Ok((
-                keyword::html(tera, config, keywords, lang, tera_data).await?,
-                TTL_KW,
-            ));
+            return Ok(keyword::html(config, keywords, lang, tera_data).await?);
         }
     }
 
     // return the homepage if there is nothing else
-    return Ok((home::html(tera, config, tera_data).await?, TTL_HOME));
+    return Ok(home::html(config, tera_data).await?);
 }

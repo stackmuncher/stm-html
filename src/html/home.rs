@@ -1,11 +1,10 @@
-use super::teradata::{RelatedKeywords, TeraData, Stats, StatsRecord};
+use super::teradata::{RelatedKeywords, Stats, StatsRecord, TeraData};
 use crate::config::Config;
 use crate::elastic;
 use regex::Regex;
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
-use tera::{Context, Tera};
 use tracing::{info, warn};
 
 #[derive(Deserialize, Debug)]
@@ -41,7 +40,7 @@ struct Tech {
 }
 
 /// Returns the default home page
-pub(crate) async fn html(tera: &Tera, config: &Config, tera_data: TeraData) -> Result<String, ()> {
+pub(crate) async fn html(config: &Config, tera_data: TeraData) -> Result<TeraData, ()> {
     info!("Generating html-home");
 
     // grab a bunch of latest additions and updates to dev idx
@@ -54,10 +53,10 @@ pub(crate) async fn html(tera: &Tera, config: &Config, tera_data: TeraData) -> R
 
     // get stats
     // just dummy stats for now - not sure what the best way of retrieving them is
-    let stats_record = vec![ StatsRecord {
+    let stats_record = vec![StatsRecord {
         ts: 0,
         iso: String::new(),
-        c: 1
+        c: 1,
     }];
     let stats = Stats {
         repo: stats_record.clone(),
@@ -65,7 +64,6 @@ pub(crate) async fn html(tera: &Tera, config: &Config, tera_data: TeraData) -> R
         dev: stats_record.clone(),
         stack: stats_record.clone(),
         hireable: stats_record.clone(),
-
     };
 
     // combine everything together for Tera
@@ -73,22 +71,13 @@ pub(crate) async fn html(tera: &Tera, config: &Config, tera_data: TeraData) -> R
         related: Some(extract_keywords(&devs)),
         devs: Some(devs),
         stats: Some(stats),
+        template_name: "home.html".to_owned(),
+        ttl: 600,
+        http_resp_code: 200,
         ..tera_data
     };
 
-    let html = tera
-        .render(
-            "home.html",
-            &Context::from_value(
-                serde_json::to_value(tera_data).expect("Failed to serialize tera_data"),
-            )
-            .expect("Cannot create context"),
-        )
-        .expect("Cannot render");
-
-    info!("Rendered");
-
-    Ok(html)
+    Ok(tera_data)
 }
 
 /// Extracts ref_kw from all engineers and returns a unique list

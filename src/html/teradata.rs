@@ -18,6 +18,12 @@ pub(crate) struct TeraData {
     pub lang: Option<String>,
     /// Same as `keywords` as a single string
     pub keywords_str: Option<String>,
+    /// Name of the HTML template to use. Defaults to 404
+    pub template_name: String,
+    /// Time to live for the HTTP response
+    pub ttl: u32,
+    /// HTTP response code
+    pub http_resp_code: u32,
 }
 
 /// List of related keywords extracted from ES

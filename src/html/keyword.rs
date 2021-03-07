@@ -1,17 +1,15 @@
 use super::teradata::TeraData;
 use crate::config::Config;
 use crate::elastic;
-use tera::{Context, Tera};
 use tracing::info;
 
 /// Returns package names containing the keyword and engineers using them
 pub(crate) async fn html(
-    tera: &Tera,
     config: &Config,
     keywords: Vec<String>,
     lang: Option<String>,
     tera_data: TeraData,
-) -> Result<String, ()> {
+) -> Result<TeraData, ()> {
     info!("Generating html-keyword");
     info!("KWs: {:?}", keywords);
     info!("Lang: {:?}", lang);
@@ -39,19 +37,11 @@ pub(crate) async fn html(
         keywords,
         lang: lang,
         keywords_str: Some(combined_search_terms),
+        template_name: "keyword.html".to_owned(),
+        ttl: 600,
+        http_resp_code: 200,
         ..tera_data
     };
 
-    let html = tera
-        .render(
-            "keyword.html",
-            &Context::from_value(
-                serde_json::to_value(tera_data).expect("Failed to serialize SearchResults"),
-            )
-            .expect("Cannot create context"),
-        )
-        .expect("Cannot render");
-    info!("Rendered");
-
-    Ok(html)
+    Ok(tera_data)
 }

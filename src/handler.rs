@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use tera::Tera;
-use tracing::{warn, info};
+use tracing::{info, warn};
 use urlencoding::decode;
 
 #[derive(Serialize, Debug)]
@@ -14,7 +14,7 @@ struct ApiGatewayResponse {
     // #[serde(skip_serializing_if = "Option::is_none")]
     // cookies: Option<Vec<String>>,
     is_base64_encoded: bool,
-    status_code: i32,
+    status_code: u32,
     headers: HashMap<String, String>,
     body: String,
 }
@@ -68,25 +68,30 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
     let url_query = decode(&api_request.raw_query_string).unwrap_or_default();
     info!("Path: {}", url_path);
     info!("Query: {}", url_query);
-    // do something useful here
-    let (html, ttl) = html::html(&tera, &config, url_path,url_query)
+
+    // send the user request downstream for processing
+    let tera_data = html::html(&config, url_path, url_query)
         .await
         .expect("html() failed");
 
-    // an empty response = validation problems -> return 404
-    if html.is_empty() {
-        let html = html::error_404::html(&tera, api_request.raw_path)
-            .await
-            .expect("Failed to produce 404 page");
-        return gw_response(html, 404, ttl);
-    }
+    // render the prepared data as HTML
+    let html = tera
+        .render(
+            &tera_data.template_name,
+            &tera::Context::from_value(
+                serde_json::to_value(&tera_data).expect("Failed to serialize tera_data"),
+            )
+            .expect("Cannot serialize: tera::Context::from_value"),
+        )
+        .expect("Cannot render");
+    info!("Rendered");
 
     // return back the result
-    gw_response(html, 200, ttl)
+    gw_response(html, tera_data.http_resp_code, tera_data.ttl)
 }
 
 /// Prepares the response with the status and HTML body. May fail and return an error.
-fn gw_response(body: String, status_code: i32, ttl: i32) -> Result<Value, Error> {
+fn gw_response(body: String, status_code: u32, ttl: u32) -> Result<Value, Error> {
     let mut headers: HashMap<String, String> = HashMap::new();
     headers.insert("Content-Type".to_owned(), "text/html".to_owned());
     headers.insert(
