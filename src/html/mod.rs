@@ -10,8 +10,6 @@ mod keyword;
 mod teradata;
 // mod package;
 
-pub(crate) const KEYWORD_VALIDATION_REGEX: &str = r#"[^\-_0-9a-zA-Z]"#;
-
 /// Routes HTML requests to processing modules. Returns HTML response and TTL value in seconds.
 pub(crate) async fn html(
     config: &Config,
@@ -32,9 +30,13 @@ pub(crate) async fn html(
         http_resp_code: 404,
     };
 
-    // is the request too long or is it for some resource related to the static pages?
-    if url_path.len() > 100 || url_path.starts_with("/about/") {
-        warn!("Very long or /about/ request: {}", url_path);
+    // return 404 for requests that are too long or for some resource related to the static pages
+    if url_path.len() > 100 {
+        warn!("Invalid request: {}", url_path);
+        return Ok(tera_data);
+    }
+    if url_path.starts_with("/about/") || url_path.starts_with("/robots.txt") {
+        warn!("Static resource request: {}", url_path);
         return Ok(tera_data);
     }
 
@@ -62,7 +64,7 @@ pub(crate) async fn html(
     // is there something in the query string?
     if url_query.len() > 1 {
         // split the query into parts using a few common separators
-        let rgx = Regex::new(r#"[\-\._0-9a-zA-Z]+"#).expect("Wrong search terms regex!");
+        let rgx = Regex::new(r#"[#\-\._0-9a-zA-Z]+"#).expect("Wrong search terms regex!");
         let search_terms = rgx
             .find_iter(&url_query)
             .map(|v| v.as_str().to_owned())

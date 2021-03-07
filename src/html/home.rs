@@ -83,7 +83,7 @@ pub(crate) async fn html(config: &Config, tera_data: TeraData) -> Result<TeraDat
 /// Extracts ref_kw from all engineers and returns a unique list
 fn extract_keywords(engineer_list: &Value) -> Vec<RelatedKeywords> {
     let mut collector: HashMap<String, usize> = HashMap::new();
-    let rgx = Regex::new(crate::html::KEYWORD_VALIDATION_REGEX).expect("Wrong _kw regex!");
+    let rgx = Regex::new(r#"[^\-_0-9a-zA-Z]"#).expect("Wrong _kw regex!");
 
     // the data we need is buried 10 levels deep - keep unwrapping until we are there
     let e_list_resp = serde_json::from_value::<EngListResp>(engineer_list.clone())
