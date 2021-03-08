@@ -1,13 +1,13 @@
 use crate::config::Config;
 use crate::elastic;
+use html_data::HtmlData;
 use regex::Regex;
-use teradata::TeraData;
 use tracing::{info, warn};
 
 mod dev;
 mod home;
+mod html_data;
 mod keyword;
-mod teradata;
 // mod package;
 
 const MAX_NUMBER_OF_VALID_SEARCH_TERMS: usize = 4;
@@ -17,9 +17,9 @@ pub(crate) async fn html(
     config: &Config,
     url_path: String,
     url_query: String,
-) -> Result<TeraData, ()> {
+) -> Result<HtmlData, ()> {
     // prepare a common structure for feeding into Tera templates
-    let tera_data = TeraData {
+    let html_data = HtmlData {
         raw_search: url_query.clone(),
         related: None,
         devs: None,
@@ -35,11 +35,11 @@ pub(crate) async fn html(
     // return 404 for requests that are too long or for some resource related to the static pages
     if url_path.len() > 100 {
         warn!("Invalid request: {}", url_path);
-        return Ok(tera_data);
+        return Ok(html_data);
     }
     if url_path.starts_with("/about/") || url_path.starts_with("/robots.txt") {
         warn!("Static resource request: {}", url_path);
-        return Ok(tera_data);
+        return Ok(html_data);
     }
 
     // check if there is a path - it can be the developer login
@@ -56,11 +56,11 @@ pub(crate) async fn html(
         // is it a valid format for a dev login?
         if config.no_sql_string_invalidation_regex.is_match(&login) {
             warn!("Invalid dev login: {}", url_path);
-            return Ok(tera_data);
+            return Ok(html_data);
         }
 
         // return dev profile page
-        return Ok(dev::html(config, login, tera_data).await?);
+        return Ok(dev::html(config, login, html_data).await?);
     }
 
     // is there something in the query string?
@@ -94,14 +94,14 @@ pub(crate) async fn html(
 
             // return a dev profile if there is a match
             if counts[0] == 1 {
-                return Ok(dev::html(config, search_terms[0].clone(), tera_data).await?);
+                return Ok(dev::html(config, search_terms[0].clone(), html_data).await?);
             } else if counts[1] > 0 {
                 // prefer matching to LANGUAGE
                 return Ok(keyword::html(
                     config,
                     Vec::new(),
                     vec![search_terms[0].clone()],
-                    tera_data,
+                    html_data,
                 )
                 .await?);
             } else {
@@ -110,7 +110,7 @@ pub(crate) async fn html(
                     config,
                     vec![search_terms[0].clone()],
                     Vec::new(),
-                    tera_data,
+                    html_data,
                 )
                 .await?);
             }
@@ -182,10 +182,10 @@ pub(crate) async fn html(
             }
 
             // run a keyword search
-            return Ok(keyword::html(config, keywords, langs, tera_data).await?);
+            return Ok(keyword::html(config, keywords, langs, html_data).await?);
         }
     }
 
     // return the homepage if there is nothing else
-    return Ok(home::html(config, tera_data).await?);
+    return Ok(home::html(config, html_data).await?);
 }

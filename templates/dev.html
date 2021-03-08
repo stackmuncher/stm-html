@@ -105,7 +105,7 @@
             <dl class="row mb-0">
               {% for ref in refs | sort(attribute="k") | slice(start=0, end=col+1) %}
               <dt class="col-11 text-truncate">
-                <a href="/?{{tech.language}} {{ref.k}}">{{ref.k}}</a>
+                <a href="/?{{tech.language | urlencode}} {{ref.k}}">{{ref.k}}</a>
               </dt>
               <dd class="col-1 text-right">
                 <small>{{ref.c}}</small>
@@ -118,7 +118,7 @@
             <dl class="row mb-0">
               {% for ref in refs | sort(attribute="k") | slice(start=col+1) %}
               <dt class="col-11 text-truncate">
-                <a href="/?{{tech.language}} {{ref.k}}">{{ref.k}}</a>
+                <a href="/?{{tech.language | urlencode}} {{ref.k}}">{{ref.k}}</a>
               </dt>
               <dd class="col-1 text-right">
                 <small>{{ref.c}}</small>
@@ -149,6 +149,8 @@
       {% endif %}
     </div>
   </div>
+
+  {% include "includes/footer.html" %}
 
 </body>
 

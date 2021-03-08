@@ -70,16 +70,16 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
     info!("Query: {}", url_query);
 
     // send the user request downstream for processing
-    let tera_data = html::html(&config, url_path, url_query)
+    let html_data = html::html(&config, url_path, url_query)
         .await
         .expect("html() failed");
 
     // render the prepared data as HTML
     let html = tera
         .render(
-            &tera_data.template_name,
+            &html_data.template_name,
             &tera::Context::from_value(
-                serde_json::to_value(&tera_data).expect("Failed to serialize tera_data"),
+                serde_json::to_value(&html_data).expect("Failed to serialize html_data"),
             )
             .expect("Cannot serialize: tera::Context::from_value"),
         )
@@ -87,7 +87,7 @@ pub(crate) async fn my_handler(event: Value, _ctx: Context) -> Result<Value, Err
     info!("Rendered");
 
     // return back the result
-    gw_response(html, tera_data.http_resp_code, tera_data.ttl)
+    gw_response(html, html_data.http_resp_code, html_data.ttl)
 }
 
 /// Prepares the response with the status and HTML body. May fail and return an error.

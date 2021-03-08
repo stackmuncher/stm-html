@@ -3,7 +3,7 @@ use serde_json::Value;
 
 /// A common data format fed to Tera templates
 #[derive(Serialize)]
-pub(crate) struct TeraData {
+pub(crate) struct HtmlData {
     /// System stats
     pub stats: Option<Value>,
     /// Raw ES response with dev idx docs

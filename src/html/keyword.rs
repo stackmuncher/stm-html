@@ -1,4 +1,4 @@
-use super::teradata::TeraData;
+use super::html_data::HtmlData;
 use crate::config::Config;
 use crate::elastic;
 use tracing::info;
@@ -8,8 +8,8 @@ pub(crate) async fn html(
     config: &Config,
     keywords: Vec<String>,
     langs: Vec<String>,
-    tera_data: TeraData,
-) -> Result<TeraData, ()> {
+    html_data: HtmlData,
+) -> Result<HtmlData, ()> {
     info!("Generating html-keyword");
     info!("KWs: {:?}", keywords);
     info!("Lang: {:?}", langs);
@@ -33,7 +33,7 @@ pub(crate) async fn html(
     let combined_search_terms = combined_search_terms.join(" ");
 
     // put everything together for Tera
-    let tera_data = TeraData {
+    let html_data = HtmlData {
         devs: Some(devs),
         keywords,
         langs: langs,
@@ -41,8 +41,8 @@ pub(crate) async fn html(
         template_name: "keyword.html".to_owned(),
         ttl: 600,
         http_resp_code: 200,
-        ..tera_data
+        ..html_data
     };
 
-    Ok(tera_data)
+    Ok(html_data)
 }

@@ -1,4 +1,4 @@
-use super::teradata::{RelatedKeywords, TeraData};
+use super::html_data::{HtmlData, RelatedKeywords};
 use crate::config::Config;
 use crate::elastic;
 use regex::Regex;
@@ -40,7 +40,7 @@ struct Tech {
 }
 
 /// Returns the default home page
-pub(crate) async fn html(config: &Config, tera_data: TeraData) -> Result<TeraData, ()> {
+pub(crate) async fn html(config: &Config, html_data: HtmlData) -> Result<HtmlData, ()> {
     info!("Generating html-home");
 
     // a query to grab a bunch of latest additions and updates to dev idx
@@ -64,17 +64,17 @@ pub(crate) async fn html(config: &Config, tera_data: TeraData) -> Result<TeraDat
     let stats = stats?;
 
     // combine everything together for Tera
-    let tera_data = TeraData {
+    let html_data = HtmlData {
         related: Some(extract_keywords(&devs)),
         devs: Some(devs),
         stats: Some(stats),
         template_name: "home.html".to_owned(),
         ttl: 600,
         http_resp_code: 200,
-        ..tera_data
+        ..html_data
     };
 
-    Ok(tera_data)
+    Ok(html_data)
 }
 
 /// Extracts ref_kw from all engineers and returns a unique list

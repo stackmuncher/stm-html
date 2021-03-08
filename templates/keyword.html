@@ -11,11 +11,12 @@
       <div class="col-lg-3 col-md-4">
         <h1><small><code>{{keywords_str}}</code></small></h1>
         <ul class="mt-3 ps-3">
-          <li class="mb-1">Used by 
+          <li class="mb-1">Used by
             {% if devs.hits.total.value > 9999 %}
             more than
             {% endif %}
-            <i>{{devs.hits.total.value}}</i> devs</li>
+            <i>{{devs.hits.total.value}}</i> devs
+          </li>
           {% if refs %}
           <li class="mb-1">Mentioned in
             {% if refs | length > 199 %}
@@ -63,6 +64,9 @@
 
     </div>
   </div>
+
+  {% include "includes/footer.html" %}
+
 </body>
 
 </html>
