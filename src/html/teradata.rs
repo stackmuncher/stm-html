@@ -5,7 +5,7 @@ use serde_json::Value;
 #[derive(Serialize)]
 pub(crate) struct TeraData {
     /// System stats
-    pub stats: Option<Stats>,
+    pub stats: Option<Value>,
     /// Raw ES response with dev idx docs
     pub devs: Option<Value>,
     /// List of related keywords from  
@@ -31,30 +31,4 @@ pub(crate) struct TeraData {
 pub(crate) struct RelatedKeywords {
     pub k: String,
     pub c: usize,
-}
-
-/// A single entry in the list of stats per metric
-#[derive(Serialize, Deserialize, Clone)]
-pub(crate) struct StatsRecord {
-    /// An EPOCH timestamp when the count was taken
-    pub ts: i64,
-    /// An ISO representation of the moment when the count was taken
-    pub iso: String,
-    /// The count
-    pub c: u64,
-}
-
-/// Combined stats. All member arrays are sorted in descending order
-#[derive(Serialize, Deserialize)]
-pub(crate) struct Stats {
-    /// A list of records for repositories
-    pub repo: Vec<StatsRecord>,
-    /// A list of records for contributors
-    pub contributor: Vec<StatsRecord>,
-    /// A list of records for devs
-    pub dev: Vec<StatsRecord>,
-    /// How many technologies are in the stack
-    pub stack: Vec<StatsRecord>,
-    /// How many devs are available for hire
-    pub hireable: Vec<StatsRecord>,
 }

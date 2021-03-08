@@ -380,3 +380,45 @@ pub(crate) async fn matching_devs(
 
     Ok(es_response)
 }
+
+/// Reads a single document by ID. 
+/// Returns `_source` as the root tag with `hits` and meta sections stripped off.
+/// ```json
+///   {
+///     "_source" : {
+///       "repo" : [
+///         {
+///           "ts" : 1615195803,
+///           "iso" : "2021-03-08T09:30:03.966075280+00:00",
+///           "c" : 1725617
+///         }
+///       ]
+///     }
+///   }
+/// ```
+pub(crate) async fn get_doc_by_id(
+    es_url: &String,
+    idx: &String,
+    doc_id: &str,
+    no_sql_string_invalidation_regex: &Regex,
+) -> Result<Value, ()> {
+    // validate field_value for possible no-sql injection
+    if no_sql_string_invalidation_regex.is_match(doc_id) {
+        error!("Invalid doc_id: {}", doc_id);
+        return Err(());
+    }
+
+    let es_api_endpoint = [
+        es_url.as_ref(),
+        "/",
+        idx,
+        "/_doc/",
+        doc_id,
+        "?filter_path=_source",
+    ]
+    .concat();
+
+    let es_response = call_es_api(es_api_endpoint, None).await?;
+
+    Ok(es_response)
+}

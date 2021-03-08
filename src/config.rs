@@ -4,6 +4,8 @@ use regex::Regex;
 pub const ES_DEV_IDX_ENV: &str = "STM_HTML_ES_DEV_IDX";
 /// Add the name of the ElasticSearch index to that env var
 pub const ES_REPO_IDX_ENV: &str = "STM_HTML_ES_REPO_IDX";
+/// Add the name of the ElasticSearch index to that env var
+pub const ES_STATS_IDX_ENV: &str = "STM_HTML_ES_STATS_IDX";
 /// Add the absolute ElasticSearch URL to that env var
 pub const ES_URL_ENV: &str = "STM_HTML_ES_URL";
 
@@ -14,6 +16,8 @@ pub struct Config {
     pub dev_idx: String,
     /// Name of `repo` index
     pub repo_idx: String,
+    /// Name of `stats` index
+    pub stats_idx: String,
     /// No-SQL field value validation regex - the value would be invalid if it's a match
     pub no_sql_string_invalidation_regex: Regex,
 }
@@ -40,6 +44,13 @@ impl Config {
                 .expect(&format!(
                     "Missing {} env var with ES REPO index name",
                     ES_REPO_IDX_ENV
+                ))
+                .trim()
+                .to_string(),
+            stats_idx: std::env::var(ES_STATS_IDX_ENV)
+                .expect(&format!(
+                    "Missing {} env var with ES STATS index name",
+                    ES_STATS_IDX_ENV
                 ))
                 .trim()
                 .to_string(),

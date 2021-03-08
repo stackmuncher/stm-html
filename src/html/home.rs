@@ -1,4 +1,4 @@
-use super::teradata::{RelatedKeywords, Stats, StatsRecord, TeraData};
+use super::teradata::{RelatedKeywords, TeraData};
 use crate::config::Config;
 use crate::elastic;
 use regex::Regex;
@@ -43,28 +43,25 @@ struct Tech {
 pub(crate) async fn html(config: &Config, tera_data: TeraData) -> Result<TeraData, ()> {
     info!("Generating html-home");
 
-    // grab a bunch of latest additions and updates to dev idx
+    // a query to grab a bunch of latest additions and updates to dev idx
     let devs = elastic::search(
         &config.es_url,
         &config.dev_idx,
         Some(elastic::SEARCH_TOP_USERS),
-    )
-    .await?;
+    );
+    // a query to get latest stats
+    // returns Stats struct wrapped in _source
+    let stats = elastic::get_doc_by_id(
+        &config.es_url,
+        &config.stats_idx,
+        "latest_stats.json",
+        &config.no_sql_string_invalidation_regex,
+    );
 
-    // get stats
-    // just dummy stats for now - not sure what the best way of retrieving them is
-    let stats_record = vec![StatsRecord {
-        ts: 0,
-        iso: String::new(),
-        c: 1,
-    }];
-    let stats = Stats {
-        repo: stats_record.clone(),
-        contributor: stats_record.clone(),
-        dev: stats_record.clone(),
-        stack: stats_record.clone(),
-        hireable: stats_record.clone(),
-    };
+    // get all the data the page needs from ES in one go with async requests
+    let (devs, stats) = futures::future::join(devs, stats).await;
+    let devs = devs?;
+    let stats = stats?;
 
     // combine everything together for Tera
     let tera_data = TeraData {
