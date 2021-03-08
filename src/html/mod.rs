@@ -81,109 +81,72 @@ pub(crate) async fn html(
         search_terms.dedup();
         let search_terms = search_terms;
 
-        // is it a single part that matches a dev name?
-        if search_terms.len() == 1 {
+        // will contain values that matches language names
+        let mut langs: Vec<String> = Vec::new();
+        // will contain the list of keywords to search for
+        let mut keywords: Vec<String> = Vec::new();
+
+        // check every search term for what type of a term it is
+        for search_term in search_terms {
+            // limit the list of valid search terms to 4
+            if keywords.len() + langs.len() >= MAX_NUMBER_OF_VALID_SEARCH_TERMS {
+                break;
+            }
+            // searches with a tailing or leading . should be cleaned up
+            // it may be possible to have a lead/trail _, maybe
+            // I havn't seen a lead/trail - anywhere
+            let search_term = search_term.trim_matches('.').trim_matches('-').to_owned();
+
+            // searching for a keyword is different from searching for a fully qualified package name
+            // e.g. xml vs System.XML vs SomeVendor.XML
+            let (fields, can_be_lang) = if search_term.contains(".") {
+                // this is a fully qualified name and cannot be a language
+                (
+                    vec!["report.tech.refs.k.keyword", "report.tech.pkgs.k.keyword"],
+                    false,
+                )
+            } else {
+                // this is a keyword, which may be all there is, but it will be in _kw field anyway
+                // this can also be a language
+                (
+                    vec![
+                        "report.tech.language.keyword",
+                        "report.tech.refs_kw.k.keyword",
+                        "report.tech.pkgs_kw.k.keyword",
+                    ],
+                    true,
+                )
+            };
+
+            // get the doc counts for the term
             let counts = elastic::matching_doc_counts(
                 &config.es_url,
                 &config.dev_idx,
-                vec!["login.keyword", "report.tech.language.keyword"],
-                &search_terms[0],
+                fields,
+                &search_term,
                 &config.no_sql_string_invalidation_regex,
             )
             .await?;
+            info!("search_term {}: {:?}", search_term, counts);
 
-            // return a dev profile if there is a match
-            if counts[0] == 1 {
-                return Ok(dev::html(config, search_terms[0].clone(), html_data).await?);
-            } else if counts[1] > 0 {
-                // prefer matching to LANGUAGE
-                return Ok(keyword::html(
-                    config,
-                    Vec::new(),
-                    vec![search_terms[0].clone()],
-                    html_data,
-                )
-                .await?);
-            } else {
-                // anything else must be a keyword, but we don't know for sure
-                return Ok(keyword::html(
-                    config,
-                    vec![search_terms[0].clone()],
-                    Vec::new(),
-                    html_data,
-                )
-                .await?);
-            }
-        }
-        // multipart search
-        else {
-            // will contain values that matches language names
-            let mut langs: Vec<String> = Vec::new();
-            // will contain the list of keywords to search for
-            let mut keywords: Vec<String> = Vec::new();
-
-            // check every search term for what type of a term it is
-            for search_term in search_terms {
-                // limit the list of valid search terms to 4
-                if keywords.len() + langs.len() >= MAX_NUMBER_OF_VALID_SEARCH_TERMS {
-                    break;
-                }
-                // searches with a tailing or leading . should be cleaned up
-                // it may be possible to have a lead/trail _, maybe
-                // I havn't seen a lead/trail - anywhere
-                let search_term = search_term.trim_matches('.').trim_matches('-').to_owned();
-
-                // searching for a keyword is different from searching for a fully qualified package name
-                // e.g. xml vs System.XML vs SomeVendor.XML
-                let (fields, can_be_lang) = if search_term.contains(".") {
-                    // this is a fully qualified name and cannot be a language
-                    (
-                        vec!["report.tech.refs.k.keyword", "report.tech.pkgs.k.keyword"],
-                        false,
-                    )
-                } else {
-                    // this is a keyword, which may be all there is, but it will be in _kw field anyway
-                    // this can also be a language
-                    (
-                        vec![
-                            "report.tech.language.keyword",
-                            "report.tech.refs_kw.k.keyword",
-                            "report.tech.pkgs_kw.k.keyword",
-                        ],
-                        true,
-                    )
-                };
-
-                // get the doc counts for the term
-                let counts = elastic::matching_doc_counts(
-                    &config.es_url,
-                    &config.dev_idx,
-                    fields,
-                    &search_term,
-                    &config.no_sql_string_invalidation_regex,
-                )
-                .await?;
-                info!("search_term {}: {:?}", search_term, counts);
-
-                // different logic for 2 or 3 field search
-                if can_be_lang {
-                    // this may be a language
-                    if counts[0] > 0 {
-                        langs.push(search_term);
-                    } else if counts[1] > 0 || counts[2] > 0 {
-                        // add it to the list of keywords if there is still room
-                        keywords.push(search_term);
-                    }
-                } else if counts[0] > 0 || counts[1] > 0 {
-                    // .-notation, so can't be a language, but can be a keyword
+            // different logic for 2 or 3 field search
+            if can_be_lang {
+                // this may be a language
+                if counts[0] > 0 {
+                    langs.push(search_term);
+                } else if counts[1] > 0 || counts[2] > 0 {
                     // add it to the list of keywords if there is still room
                     keywords.push(search_term);
                 }
+            } else if counts[0] > 0 || counts[1] > 0 {
+                // .-notation, so can't be a language, but can be a keyword
+                // add it to the list of keywords if there is still room
+                keywords.push(search_term);
             }
-
-            // run a keyword search
-            return Ok(keyword::html(config, keywords, langs, html_data).await?);
         }
+
+        // run a keyword search
+        return Ok(keyword::html(config, keywords, langs, html_data).await?);
     }
 
     // return the homepage if there is nothing else
