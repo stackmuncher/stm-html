@@ -308,14 +308,13 @@ pub(crate) fn log_http_body(body_bytes: &hyper::body::Bytes) {
     }
 }
 
-/// Returns a list of matching docs from DEV idx depending on the params. The query is built to match the list of params.
-/// No more than 3 keywords are considered and searched across `pkgs_kw` and `refs_kw`.
+/// Returns up to 24 matching docs from DEV idx depending on the params. The query is built to match the list of params.
 /// Lang and KW params are checked for No-SQL injection.
 pub(crate) async fn matching_devs(
     es_url: &String,
     dev_idx: &String,
     keywords: Vec<String>,
-    lang: Option<String>,
+    langs: Vec<String>,
     no_sql_string_invalidation_regex: &Regex,
 ) -> Result<Value, ()> {
     // sample query
@@ -325,7 +324,7 @@ pub(crate) async fn matching_devs(
     let mut must_clauses: Vec<String> = Vec::new();
 
     // build language clause
-    if let Some(lang) = lang {
+    for lang in langs {
         // validate field_value for possible no-sql injection
         if no_sql_string_invalidation_regex.is_match(&lang) {
             error!("Invalid lang: {}", lang);
@@ -341,7 +340,7 @@ pub(crate) async fn matching_devs(
         .concat();
 
         must_clauses.push(clause);
-    };
+    }
 
     // build keywords clauses
     for keyword in keywords {
@@ -351,13 +350,15 @@ pub(crate) async fn matching_devs(
             return Err(());
         }
 
+        // query  pkgs and refs if the name is qualified or pkgs_kw and refs_kw if it's not
+        let qual_unqual_clause = if keyword.contains(".") {
+            r#"","fields":["report.tech.pkgs.k.keyword","report.tech.refs.k.keyword"]}}"#
+        } else {
+            r#"","fields":["report.tech.pkgs_kw.k.keyword","report.tech.refs_kw.k.keyword"]}}"#
+        };
+
         // using multimatch because different techs have keywords in different places
-        let clause = [
-            r#"{"multi_match":{"query":""#,
-            &keyword,
-            r#"","fields":["report.tech.pkgs_kw.k.keyword","report.tech.refs_kw.k.keyword"]}}"#,
-        ]
-        .concat();
+        let clause = [r#"{"multi_match":{"query":""#, &keyword, qual_unqual_clause].concat();
 
         must_clauses.push(clause);
     }

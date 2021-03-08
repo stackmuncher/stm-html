@@ -14,8 +14,8 @@ pub(crate) struct TeraData {
     pub raw_search: String,
     /// List of keywords extracted from the raw search
     pub keywords: Vec<String>,
-    /// A single search terms picked as the language
-    pub lang: Option<String>,
+    /// A list of search terms matching known languages
+    pub langs: Vec<String>,
     /// Same as `keywords` as a single string
     pub keywords_str: Option<String>,
     /// Name of the HTML template to use. Defaults to 404
