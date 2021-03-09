@@ -2,51 +2,46 @@
 <html lang="en">
 
 {% include "includes/head.html" %}
-{#% set refs = refs.aggregations.refs.buckets | concat(with=pkgs.aggregations.pkgs.buckets) | unique(attribute="key") %#}
 
 <body>
   {% include "includes/top-nav.html" %}
   <div class="container-fluid">
     <div class="row">
       <div class="col-lg-3 col-md-4">
-        <h1><small><code>{{keywords_str}}</code></small></h1>
+
+        {% if devs.hits.hits | length > 0 %}
+        <h1>
+          <small>Software developers for</small><br />
+          <small><code>{{keywords_str}}</code></small>
+        </h1>
         <ul class="mt-3 ps-3">
-          <li class="mb-1">Used by
+          <li class="mb-1"><strong>Total matches:</strong>
             {% if devs.hits.total.value > 9999 %}
             more than
             {% endif %}
-            <i>{{devs.hits.total.value}}</i> devs
+            {{devs.hits.total.value}}
           </li>
-          {% if refs %}
-          <li class="mb-1">Mentioned in
-            {% if refs | length > 199 %}
-            more than
-            {% endif %}
-            {{refs | length}} packages
-          </li>
+          {% if devs.hits.hits | length > 10 %}
+          <li class="mb-1"><strong>Sort order:</strong> recently active first</li>
           {% endif %}
         </ul>
 
         {% include "includes/truncated_search_msg.html" %}
 
-        {% if refs %}
-        <h3>Related packages</h3>
-        <ul class="list-unstyled">
-          {% for ref in refs | sort(attribute="key") %}
-          <li class="text-truncate mb-1">
-            {% if ref.key | length > 40 %}
-            <a title="Used {{ref.doc_count}} times, {{ref.key}}" href="/_pkg/{{ref.key}}">{{ref.key}}</a>
-            {% else %}
-            <a title="Used {{ref.doc_count}} times" href="/_pkg/{{ref.key}}">{{ref.key}}</a>
-            {% endif %}
-          </li>
-          {% endfor %}
+        <h6 class="mt-4"><strong>Hiring a software developer?</strong></h6>
+        <p>Click on individual profiles to see developer skills analysis and contact details.</p>
+        <p>Some developers prefer to be contacted by registered users only and have no contact details in their public profiles. More <a href="/about/employers/">for employers ...</a></p>
+
+        {% endif %}
+
+        {% if devs.hits.hits | length == 0 %}
+        <h1><small><code>{{keywords_str}}</code></small></h1>
+        <h5 class="mt-3">Couldn't find anyone with these exact skills</h5>
+        <ul class="mt-3 ps-3">
+          <li class="mb-1">Try removing or changing some of the keywords.</li>
+          <li class="mb-1">New dev reports are added every few minutes. Registered users can set up alerts for new skill matches. <a href="mailto:info@stackmuncher.com">Contact us</a>
+            for full access.</li>
         </ul>
-        {% elif devs.hits.hits | length == 0 %}
-        <h3>Not found</h3>
-        <p>New dev reports are added every few minutes.</p>
-        <p>Registered users can set up alerts for package use by devs. <a href="mailto:info@stackmuncher.com">Contact us</a>
-          for full access.</p>
         {% endif %}
       </div>
 
