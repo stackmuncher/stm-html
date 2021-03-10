@@ -24,6 +24,10 @@ pub(crate) struct HtmlData {
     pub ttl: u32,
     /// HTTP response code
     pub http_resp_code: u32,
+    /// Contents of HTML meta-tag for bots (nofollow, noindex), if any
+    /// e.g. `<meta name="robots" content="noindex">` for `rust+actix` search
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub meta_robots: Option<String>,
 }
 
 /// List of related keywords extracted from ES

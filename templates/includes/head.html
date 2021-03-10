@@ -1,6 +1,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  {% if meta_robots %}
+  <meta name="robots" content="{{meta_robots}}">
+  {% endif %}
 
   <title>Global Directory of Software Developers</title>
 

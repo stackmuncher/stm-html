@@ -32,6 +32,14 @@ pub(crate) async fn html(
     }
     let combined_search_terms = combined_search_terms.join(" ");
 
+    // any page with more than one language or any number of keywords should not be indexed
+    // in other words, only search results with just one language and nothing else are indexed
+    let meta_robots = if langs.len() > 1 || !keywords.is_empty() {
+        Some("noindex".to_owned())
+    } else {
+        None
+    };
+
     // put everything together for Tera
     let html_data = HtmlData {
         devs: Some(devs),
@@ -41,6 +49,7 @@ pub(crate) async fn html(
         template_name: "keyword.html".to_owned(),
         ttl: 600,
         http_resp_code: 200,
+        meta_robots,
         ..html_data
     };
 

@@ -30,6 +30,7 @@ pub(crate) async fn html(
         template_name: "404.html".to_owned(),
         ttl: 600,
         http_resp_code: 404,
+        meta_robots: None,
     };
 
     // return 404 for requests that are too long or for some resource related to the static pages
