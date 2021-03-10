@@ -30,7 +30,7 @@ pub(crate) async fn html(
     for kw in &keywords {
         combined_search_terms.push(kw.clone());
     }
-    let combined_search_terms = combined_search_terms.join(" ");
+    let combined_search_terms = combined_search_terms.join(" + ");
 
     // any page with more than one language or any number of keywords should not be indexed
     // in other words, only search results with just one language and nothing else are indexed

@@ -31,6 +31,7 @@ pub(crate) async fn html(
         ttl: 600,
         http_resp_code: 404,
         meta_robots: None,
+        login_str: None,
     };
 
     // return 404 for requests that are too long or for some resource related to the static pages

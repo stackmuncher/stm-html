@@ -12,7 +12,7 @@ pub(crate) async fn html(
     info!("Generating html-dev");
     let query = elastic::add_param(
         elastic::SEARCH_ENGINEER_BY_LOGIN,
-        login,
+        login.clone(),
         &config.no_sql_string_invalidation_regex,
     );
 
@@ -21,6 +21,7 @@ pub(crate) async fn html(
         template_name: "dev.html".to_owned(),
         ttl: 3600,
         http_resp_code: 200,
+        login_str: Some(login),
         ..html_data
     };
 
