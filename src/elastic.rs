@@ -1,5 +1,5 @@
 //use elasticsearch::{http::transport::Transport, CountParts, Elasticsearch, SearchParts};
-use futures::future::join_all;
+use futures::future::{join3, join_all};
 use hyper::{Body, Client, Request, Uri};
 use hyper_rustls::HttpsConnector;
 use regex::Regex;
@@ -7,26 +7,17 @@ use rusoto_core::credential::{DefaultCredentialsProvider, ProvideAwsCredentials}
 use rusoto_signature::signature::SignedRequest;
 use serde::Deserialize;
 use serde_json::Value;
-use std::convert::TryInto;
 use std::str::FromStr;
+use std::{collections::HashMap, convert::TryInto};
 use tracing::{debug, error, info};
 
-//pub const SEARCH_TOP_KEYWORDS: &str = r#"{"size":0,"aggs":{"refs":{"terms":{"field":"report.tech.refs_kw.k.keyword","exclude": ["System","TargetFramework","Microsoft","Text","0","1","2"],"size":100},"aggs":{"total":{"sum":{"field":"report.tech.refs_kw.c"}},"sort":{"bucket_sort":{"sort":["_key"]}}}}}}"#;
-// pub const SEARCH_TOTAL_HIREABLE: &str =
-//     r#"{"size":0,"aggregations":{"total_hireable":{"terms":{"field":"hireable"}}}}"#;
 pub const SEARCH_TOP_USERS: &str = r#"{"size":24,"query":{"match":{"hireable":{"query":"true"}}},"sort":[{"report.timestamp":{"order":"desc"}}]}"#;
-// pub const SEARCH_TOTAL_TECHS: &str =
-//     r#"{"size":0,"aggs":{"stack_size":{"cardinality":{"field":"report.tech.language.keyword"}}}}"#;
 pub const SEARCH_ENGINEER_BY_LOGIN: &str = r#"{"query":{"term":{"login.keyword":{"value":"%"}}}}"#;
-// pub const SEARCH_REFS_BY_KEYWORD: &str = r#"{"size":0,"aggregations":{"refs":{"terms":{"field":"report.tech.refs.k.keyword","size":200,"include":"(.*\\.)?%.*"}}}}"#;
-// pub const SEARCH_PKGS_BY_KEYWORD: &str = r#"{"size":0,"aggregations":{"pkgs":{"terms":{"field":"report.tech.pkgs.k.keyword","size":200,"include":"(.*\\.)?%.*"}}}}"#;
-// pub const SEARCH_ENGINEER_BY_KEYWORD: &str = r#"{"size":24,"query":{"bool":{"should":[{"term":{"report.tech.pkgs_kw.k.keyword":"%"}},{"term":{"report.tech.refs_kw.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
-// pub const SEARCH_ENGINEER_BY_PACKAGE: &str = r#"{"size":24,"query":{"bool":{"should":[{"term":{"report.tech.pkgs.k.keyword":"%"}},{"term":{"report.tech.refs.k.keyword":"%"}}]}},"sort":[{"hireable":{"order":"desc"}},{"report.timestamp":{"order":"desc"}}]}"#;
 
 /// Member of ESHitsCount
 #[derive(Deserialize)]
 struct ESHitsCountTotals {
-    value: u64,
+    value: usize,
 }
 
 /// Member of ESHitsCount
@@ -59,6 +50,45 @@ struct ESHitsCountHits {
 #[derive(Deserialize)]
 struct ESHitsCount {
     hits: ESHitsCountHits,
+}
+
+/// Part of ESAggs
+#[derive(Deserialize)]
+struct ESAggsBucket {
+    pub key: String,
+    pub doc_count: usize,
+}
+
+/// Part of ESAggs
+#[derive(Deserialize)]
+struct ESAggsBuckets {
+    pub buckets: Vec<ESAggsBucket>,
+}
+
+/// Part of ESAggs
+#[derive(Deserialize)]
+struct ESAggsAgg {
+    pub agg: ESAggsBuckets,
+}
+
+/// A generic structure for ES aggregations result. Make sure the aggregation name is `aggs`.
+/// ```json
+///   {
+///     "aggregations" : {
+///       "agg" : {
+///         "buckets" : [
+///           {
+///             "key" : "twilio",
+///             "doc_count" : 597
+///           }
+///         ]
+///       }
+///     }
+///   }
+/// ```
+#[derive(Deserialize)]
+struct ESAggs {
+    pub aggregations: ESAggsAgg,
 }
 
 /// Run a search with the provided query.
@@ -198,7 +228,7 @@ pub(crate) async fn matching_doc_count(
     field: &str,
     field_value: &String,
     no_sql_string_invalidation_regex: &Regex,
-) -> Result<u64, ()> {
+) -> Result<usize, ()> {
     // validate field_value for possible no-sql injection
     if no_sql_string_invalidation_regex.is_match(field_value) {
         error!("Invalid field_value: {}", field_value);
@@ -265,7 +295,7 @@ pub(crate) async fn matching_doc_counts(
     fields: Vec<&str>,
     field_value: &String,
     no_sql_string_invalidation_regex: &Regex,
-) -> Result<Vec<u64>, ()> {
+) -> Result<Vec<usize>, ()> {
     let mut futures: Vec<_> = Vec::new();
 
     for field in fields {
@@ -279,7 +309,7 @@ pub(crate) async fn matching_doc_counts(
     }
 
     // execute all searches in parallel and unwrap the results
-    let mut counts: Vec<u64> = Vec::new();
+    let mut counts: Vec<usize> = Vec::new();
     for count in join_all(futures).await {
         match count {
             Err(_) => {
@@ -381,7 +411,7 @@ pub(crate) async fn matching_devs(
     Ok(es_response)
 }
 
-/// Reads a single document by ID. 
+/// Reads a single document by ID.
 /// Returns `_source` as the root tag with `hits` and meta sections stripped off.
 /// ```json
 ///   {
@@ -421,4 +451,100 @@ pub(crate) async fn get_doc_by_id(
     let es_response = call_es_api(es_api_endpoint, None).await?;
 
     Ok(es_response)
+}
+
+/// Search related keywords and packages by a partial keyword, up to 100 of each.
+/// Returns a combined list of keyword/populary count for refs_kw and pkgs_kw sorted alphabetically.
+/// The keyword is checked for validity ([^\-_0-9a-zA-Z]) before inserting into the regex query.
+/// Returns an error if the keyword has any extra characters or the queries fail.
+pub(crate) async fn related_keywords(
+    es_url: &String,
+    idx: &String,
+    keyword: &String,
+) -> Result<Vec<(String, usize)>, ()> {
+    // validate field_value for possible no-sql injection
+    let rgx = Regex::new(crate::config::SAFE_REGEX_SUBSTRING)
+        .expect("Failed to compile SAFE_REGEX_SUBSTRING");
+    if rgx.is_match(&keyword) {
+        error!("Invalid keyword: {}", keyword);
+        return Err(());
+    }
+
+    // some keywords may contain #,. or -, which should be escaped in regex
+    let keyword_escaped = keyword.replace("#", r#"\\#"#).replace(".", r#"\\."#).replace("-", r#"\\-"#);
+
+    // send a joined query to ES
+    let refs = r#"{"size":0,"aggregations":{"agg":{"terms":{"field":"report.tech.refs.k.keyword","size":50,"include":"(.*\\.)?%.*"}}}}"#;
+    let refs = refs.replace("%", &keyword_escaped);
+    let pkgs = r#"{"size":0,"aggregations":{"agg":{"terms":{"field":"report.tech.pkgs.k.keyword","size":50,"include":"(.*\\.)?%.*"}}}}"#;
+    let pkgs = pkgs.replace("%", &keyword_escaped);
+    let langs = r#"{"size":0,"aggregations":{"agg":{"terms":{"field":"report.tech.language.keyword","size":50,"include":"(.*\\.)?%.*"}}}}"#;
+    let langs = langs.replace("%", &keyword_escaped);
+    let (refs, pkgs, langs) = join3(
+        search(es_url, idx, Some(&refs)),
+        search(es_url, idx, Some(&pkgs)),
+        search(es_url, idx, Some(&langs)),
+    )
+    .await;
+
+    // extract the data from JSON
+    let refs = match serde_json::from_value::<ESAggs>(refs?) {
+        Err(e) => {
+            error!("Cannot deser refs with {}", e);
+            return Err(());
+        }
+        Ok(v) => v,
+    };
+    let pkgs = match serde_json::from_value::<ESAggs>(pkgs?) {
+        Err(e) => {
+            error!("Cannot pkgs refs with {}", e);
+            return Err(());
+        }
+        Ok(v) => v,
+    };
+    let langs = match serde_json::from_value::<ESAggs>(langs?) {
+        Err(e) => {
+            error!("Cannot deser langs with {}", e);
+            return Err(());
+        }
+        Ok(v) => v,
+    };
+
+    // extract refs into a hashmap
+    let mut related = refs
+        .aggregations
+        .agg
+        .buckets
+        .into_iter()
+        .map(|v| (v.key.to_lowercase(), v.doc_count))
+        .collect::<HashMap<String, usize>>();
+
+    // combine the refs counts with pkgs counts
+    for bucket in pkgs.aggregations.agg.buckets {
+        if let Some(doc_count) = related.get_mut(&bucket.key) {
+            *doc_count += bucket.doc_count;
+        } else {
+            related.insert(bucket.key, bucket.doc_count);
+        }
+    }
+
+    // repeat the same for languages
+    for bucket in langs.aggregations.agg.buckets {
+        if let Some(doc_count) = related.get_mut(&bucket.key) {
+            *doc_count += bucket.doc_count;
+        } else {
+            related.insert(bucket.key, bucket.doc_count);
+        }
+    }
+
+    // convert the combined hashmap into an array
+    let mut related = related
+        .into_iter()
+        .map(|v| (v.0, v.1))
+        .collect::<Vec<(String, usize)>>();
+
+    // sort the result alphabetically
+    related.sort_by(|a, b| b.1.cmp(&a.1));
+
+    Ok(related)
 }

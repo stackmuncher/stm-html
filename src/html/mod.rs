@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::elastic;
-use html_data::HtmlData;
+use html_data::{HtmlData, KeywordMetadata};
 use regex::Regex;
 use tracing::{info, warn};
 
@@ -8,7 +8,7 @@ mod dev;
 mod home;
 mod html_data;
 mod keyword;
-// mod package;
+mod related;
 
 const MAX_NUMBER_OF_VALID_SEARCH_TERMS: usize = 4;
 
@@ -24,6 +24,7 @@ pub(crate) async fn html(
         related: None,
         devs: None,
         keywords: Vec::new(),
+        keywords_meta: Vec::new(),
         langs: Vec::new(),
         keywords_str: None,
         stats: None,
@@ -35,13 +36,19 @@ pub(crate) async fn html(
     };
 
     // return 404 for requests that are too long or for some resource related to the static pages
-    if url_path.len() > 100 {
-        warn!("Invalid request: {}", url_path);
+    if url_path.len() > 100 || url_query.len() > 100 {
+        warn!("Invalid request: {} / {}", url_path, url_query);
         return Ok(html_data);
     }
     if url_path.starts_with("/about/") || url_path.starts_with("/robots.txt") {
         warn!("Static resource request: {}", url_path);
         return Ok(html_data);
+    }
+
+    // is it a related keyword search?
+    if url_path.trim_end_matches("/") == "/_related" {
+        // return related keywords page
+        return Ok(related::html(config, url_query, html_data).await?);
     }
 
     // check if there is a path - it can be the developer login
@@ -81,23 +88,36 @@ pub(crate) async fn html(
             .map(|v| v.to_lowercase())
             .collect::<Vec<String>>();
         search_terms.dedup();
+        search_terms.sort();
         let search_terms = search_terms;
 
         // will contain values that matches language names
         let mut langs: Vec<String> = Vec::new();
         // will contain the list of keywords to search for
         let mut keywords: Vec<String> = Vec::new();
+        // every search term submitted by the user with the meta of how it was understood
+        let mut keywords_meta: Vec<KeywordMetadata> = Vec::new();
 
         // check every search term for what type of a term it is
         for search_term in search_terms {
-            // limit the list of valid search terms to 4
-            if keywords.len() + langs.len() >= MAX_NUMBER_OF_VALID_SEARCH_TERMS {
-                break;
-            }
             // searches with a tailing or leading . should be cleaned up
             // it may be possible to have a lead/trail _, maybe
             // I havn't seen a lead/trail - anywhere
             let search_term = search_term.trim_matches('.').trim_matches('-').to_owned();
+
+            // limit the list of valid search terms to 4
+            if keywords.len() + langs.len() >= MAX_NUMBER_OF_VALID_SEARCH_TERMS {
+                // this term got no results and will be ignored
+                keywords_meta.push(KeywordMetadata {
+                    search_term: search_term,
+                    es_keyword_count: 0,
+                    es_package_count: 0,
+                    is_language: false,
+                    ignored: true,
+                });
+
+                continue;
+            }
 
             // searching for a keyword is different from searching for a fully qualified package name
             // e.g. xml vs System.XML vs SomeVendor.XML
@@ -131,8 +151,19 @@ pub(crate) async fn html(
             .await?;
             info!("search_term {}: {:?}", search_term, counts);
 
-            // different logic for 2 or 3 field search
             if can_be_lang {
+                // there are 3 search results if it can be a language
+
+                // store the metadata for this search term
+                keywords_meta.push(KeywordMetadata {
+                    search_term: search_term.clone(),
+                    es_keyword_count: counts[1] + counts[2],
+                    es_package_count: 0,
+                    is_language: counts[0] > 0,
+                    ignored: (counts[0] + counts[1] + counts[2]) == 0,
+                });
+
+                // extract useful terms to be used in the search
                 // this may be a language
                 if counts[0] > 0 {
                     langs.push(search_term);
@@ -141,11 +172,40 @@ pub(crate) async fn html(
                     keywords.push(search_term);
                 }
             } else if counts[0] > 0 || counts[1] > 0 {
+                // only 2 results if it looks like a package
+
+                // store the metadata for this search term
+                keywords_meta.push(KeywordMetadata {
+                    search_term: search_term.clone(),
+                    es_keyword_count: counts[0],
+                    es_package_count: counts[1],
+                    is_language: false,
+                    ignored: (counts[0] + counts[1]) == 0,
+                });
+
                 // .-notation, so can't be a language, but can be a keyword
                 // add it to the list of keywords if there is still room
                 keywords.push(search_term);
+            } else {
+                // this term got no results and will be ignored
+                keywords_meta.push(KeywordMetadata {
+                    search_term: search_term,
+                    es_keyword_count: 0,
+                    es_package_count: 0,
+                    is_language: false,
+                    ignored: true,
+                });
             }
         }
+
+        // update keyword metadata for the output
+        // they should be sorted in the same order as the search terms, which were
+        // sorted earlier
+        // the sort order has to be enforced for URL consistency
+        let html_data = HtmlData {
+            keywords_meta,
+            ..html_data
+        };
 
         // run a keyword search
         return Ok(keyword::html(config, keywords, langs, html_data).await?);

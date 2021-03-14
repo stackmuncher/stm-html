@@ -22,6 +22,10 @@ pub struct Config {
     pub no_sql_string_invalidation_regex: Regex,
 }
 
+/// A regex formula to check for unsafe values to insert into another regex string.
+/// It is stricter than no_sql_string_invalidation_regex and is to be compiled only in some cases
+pub(crate) const SAFE_REGEX_SUBSTRING: &str = r#"[^#\-\._0-9a-zA-Z]"#;
+
 impl Config {
     pub fn new() -> Self {
         Config {

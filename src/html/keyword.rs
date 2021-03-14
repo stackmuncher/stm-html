@@ -14,6 +14,22 @@ pub(crate) async fn html(
     info!("KWs: {:?}", keywords);
     info!("Lang: {:?}", langs);
 
+    // return a blank response if no valid keywords were extracted from the search terms
+    if keywords.is_empty() && langs.is_empty() {
+        return Ok(HtmlData {
+            devs: None,
+            keywords,
+            langs,
+            keywords_str: None,
+            template_name: "keyword.html".to_owned(),
+            ttl: 3600,
+            http_resp_code: 404,
+            meta_robots: Some("noindex".to_owned()),
+            ..html_data
+        });
+    }
+
+    // get the data from ES
     let devs = elastic::matching_devs(
         &config.es_url,
         &config.dev_idx,
@@ -44,7 +60,7 @@ pub(crate) async fn html(
     let html_data = HtmlData {
         devs: Some(devs),
         keywords,
-        langs: langs,
+        langs,
         keywords_str: Some(combined_search_terms),
         template_name: "keyword.html".to_owned(),
         ttl: 600,
