@@ -11,6 +11,7 @@ mod keyword;
 mod related;
 
 const MAX_NUMBER_OF_VALID_SEARCH_TERMS: usize = 4;
+const MAX_NUMBER_OF_SEARCH_TERMS_TO_CHECK: usize = 6;
 
 /// Routes HTML requests to processing modules. Returns HTML response and TTL value in seconds.
 pub(crate) async fn html(
@@ -88,7 +89,6 @@ pub(crate) async fn html(
             .map(|v| v.to_lowercase())
             .collect::<Vec<String>>();
         search_terms.dedup();
-        search_terms.sort();
         let search_terms = search_terms;
 
         // will contain values that matches language names
@@ -99,21 +99,24 @@ pub(crate) async fn html(
         let mut keywords_meta: Vec<KeywordMetadata> = Vec::new();
 
         // check every search term for what type of a term it is
-        for search_term in search_terms {
+        for (search_term_idx, search_term) in search_terms.into_iter().enumerate() {
             // searches with a tailing or leading . should be cleaned up
             // it may be possible to have a lead/trail _, maybe
             // I havn't seen a lead/trail - anywhere
             let search_term = search_term.trim_matches('.').trim_matches('-').to_owned();
 
             // limit the list of valid search terms to 4
-            if keywords.len() + langs.len() >= MAX_NUMBER_OF_VALID_SEARCH_TERMS {
+            if search_term_idx >= MAX_NUMBER_OF_SEARCH_TERMS_TO_CHECK
+                || keywords.len() + langs.len() >= MAX_NUMBER_OF_VALID_SEARCH_TERMS
+            {
                 // this term got no results and will be ignored
                 keywords_meta.push(KeywordMetadata {
                     search_term: search_term,
                     es_keyword_count: 0,
                     es_package_count: 0,
-                    is_language: false,
-                    ignored: true,
+                    es_language_count: 0,
+                    unknown: false,
+                    too_many: true,
                 });
 
                 continue;
@@ -159,8 +162,9 @@ pub(crate) async fn html(
                     search_term: search_term.clone(),
                     es_keyword_count: counts[1] + counts[2],
                     es_package_count: 0,
-                    is_language: counts[0] > 0,
-                    ignored: (counts[0] + counts[1] + counts[2]) == 0,
+                    es_language_count: counts[0],
+                    unknown: (counts[0] + counts[1] + counts[2]) == 0,
+                    too_many: false,
                 });
 
                 // extract useful terms to be used in the search
@@ -179,8 +183,9 @@ pub(crate) async fn html(
                     search_term: search_term.clone(),
                     es_keyword_count: counts[0],
                     es_package_count: counts[1],
-                    is_language: false,
-                    ignored: (counts[0] + counts[1]) == 0,
+                    es_language_count: 0,
+                    unknown: (counts[0] + counts[1]) == 0,
+                    too_many: false,
                 });
 
                 // .-notation, so can't be a language, but can be a keyword
@@ -192,8 +197,9 @@ pub(crate) async fn html(
                     search_term: search_term,
                     es_keyword_count: 0,
                     es_package_count: 0,
-                    is_language: false,
-                    ignored: true,
+                    es_language_count: 0,
+                    unknown: true,
+                    too_many: false,
                 });
             }
         }

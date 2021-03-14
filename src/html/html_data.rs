@@ -41,14 +41,17 @@ pub(crate) struct HtmlData {
 pub(crate) struct KeywordMetadata {
     /// A normalized version of what the user searched for
     pub search_term: String,
-    /// How many matching terms were found in ES keywords
+    /// Number of developers using this keyword
     pub es_keyword_count: usize,
-    /// How many matching terms were found in ES packages
+    /// Number of developers using this package
     pub es_package_count: usize,
-    /// True if the term matches a tech language
-    pub is_language: bool,
+    /// Number of developers using this language
+    pub es_language_count: usize,
     /// True if the term got no matches at all. Needed to simplify the front-end logic.
-    pub ignored: bool,
+    pub unknown: bool,
+    /// True if the number of allowed search terms was exceeded. Needed to simplify the front end
+    /// and keen the control of the number in one place.
+    pub too_many: bool,
 }
 
 /// List of related keywords extracted from ES

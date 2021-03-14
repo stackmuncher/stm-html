@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+
+{% include "includes/head.html" %}
+
+<body>
+  {% include "includes/top-nav.html" %}
+  <div class="container-fluid">
+    <div class="row {% if not devs or devs.hits.hits | length == 0 %}align-items-center{% endif %}">
+      <div class="col-md-4 col-lg-3">
+
+        {% if devs and devs.hits.hits | length > 0 %}
+        <h1>
+          <small>Software developers for</small><br />
+          <small>{% for kw in keywords_meta %}
+            
+            <code>
+              {% if kw.es_language_count > 0 %}
+              <a style="text-decoration: none; color:inherit;" href="/_related?{{kw.search_term | urlencode }}" title="Recognized as a language used by . Click to see what libraries may have a similar name.">{{kw.search_term}}</a>
+              {% elif kw.ignored %}
+              <a style="text-decoration:line-through; color:inherit;" href="/_related?{{kw.search_term | urlencode }}" title="Related keywords: {{kw.es_keyword_count + kw.es_package_count}}">{{kw.search_term}}</a>
+              {% else %}
+              <a style="text-decoration: none; color:inherit;" href="/_related?{{kw.search_term | urlencode }}" title="Related keywords: {{kw.es_keyword_count + kw.es_package_count}}">{{kw.search_term}}</a>
+              {% endif %}
+            </code>
+            {% if not loop.last %}+{% endif %}
+            
+            {% endfor %}</small>
+        </h1>
+
+        <ul class="mt-3 ps-3">
+          <li class="mb-1"><strong>Total matches:</strong>
+            {% if devs.hits.total.value > 9999 %}
+            more than
+            {% endif %}
+            {{devs.hits.total.value}}
+          </li>
+          {% if devs.hits.hits | length > 10 %}
+          <li class="mb-1"><strong>Sort order:</strong> recently active first</li>
+          {% endif %}
+
+          {% set missed = keywords_meta | filter(attribute="ignored", value=true) %}
+          {% if missed | length > 0 %}
+          <li class="mb-1"><strong>Ignored keywords:</strong>
+            {% for kw in missed %}
+            <a href="/_related?{{kw.search_term | urlencode }}" title="Click to search for related keywords">{{kw.search_term}}</a>
+            {% endfor %}
+          </li>
+          {% endif %}
+        </ul>
+
+        {% include "includes/truncated_search_msg.html" %}
+
+        <h6 class="mt-4"><strong>Hiring a software developer?</strong></h6>
+        <p>Click on individual profiles to see developer skills analysis and contact details.</p>
+        <p>Some developers prefer to be contacted by registered users only and have no contact details in their public profiles. More <a href="/about/employers/">for employers ...</a></p>
+
+        {% else %}
+
+        <h1><small>{{raw_search}}</small></h1>
+        <h5 class="mt-3">Couldn't find anyone with these exact skills</h5>
+        <ul class="mt-3 ps-3">
+          <li class="mb-1">Try removing or changing some of the keywords.</li>
+          <li class="mb-1">New dev reports are added every few minutes. Registered users can set up alerts for new skill matches. <a href="mailto:info@stackmuncher.com">Contact us</a>
+            for full access.</li>
+        </ul>
+        <h6 class="mt-4"><strong>Find related keywords</strong></h6>
+        <ul class="">
+          {% for kw in keywords_meta %}
+          <li class="mb-2">
+            <a href="/_related?{{kw.search_term | urlencode }}">{{kw.search_term}}</a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+
+      {% if devs and devs.hits.hits | length > 0 %}
+      <div class="col-md-8 col-lg-9">
+        <main role="main">
+          <div class="row">
+            {% for dev in devs.hits.hits %}
+            <div class="col-lg-4">
+              {% include "includes/dev-card.html" %}
+            </div>
+            {% endfor %}
+          </div>
+        </main>
+      </div>
+      {% else %}
+      <div class="col-md-1 col-lg-2"></div>
+      <div class="col-md-4">
+        <main role="main">
+          <div class="row">
+            <div class="col-lg-4">
+              <h2 style="text-align:center; font-size:1000%; font-weight:600;" class="pe-md-5 text-muted">404</h2>
+            </div>
+          </div>
+        </main>
+      </div>
+      <div class="col-md-1 col-lg-2"></div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  {% include "includes/footer.html" %}
+
+</body>
+
+</html>
