@@ -51,7 +51,7 @@
           {% if ignored_terms | length > 0 %}
           <li class="mb-1">
             {% for kw in ignored_terms %}
-            <a class="text-muted" href="/_related?{{kw.search_term | urlencode }}" title="Click to search for related keywords">{{kw.search_term}}</a>
+            <code><a class="text-muted" href="/_related?{{kw.search_term | urlencode }}" title="Click to search for related keywords">{{kw.search_term}}</a></code>
             {% endfor %}
             <span class="text_muted"> (too many keywords)</span>
           </li>
