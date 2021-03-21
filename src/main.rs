@@ -1,5 +1,5 @@
 #[cfg(not(debug_assertions))]
-use lambda::handler_fn;
+use lambda_runtime::handler_fn;
 
 mod config;
 mod elastic;
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Error> {
 /// not be deployed to Lambda.
 #[cfg(debug_assertions)]
 mod proxy {
-    use lambda::Context;
+    use lambda_runtime::Context;
     use rusoto_core::region::Region;
     use rusoto_sqs::{
         DeleteMessageRequest, ReceiveMessageRequest, SendMessageRequest, Sqs, SqsClient,

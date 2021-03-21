@@ -187,7 +187,7 @@ pub(crate) async fn call_es_api(
     debug!("Http rq: {:?}", req);
 
     let res = Client::builder()
-        .build::<_, hyper::Body>(HttpsConnector::new())
+        .build::<_, hyper::Body>(HttpsConnector::with_native_roots())
         .request(req)
         .await
         .expect("ES request failed");
@@ -471,7 +471,10 @@ pub(crate) async fn related_keywords(
     }
 
     // some keywords may contain #,. or -, which should be escaped in regex
-    let keyword_escaped = keyword.replace("#", r#"\\#"#).replace(".", r#"\\."#).replace("-", r#"\\-"#);
+    let keyword_escaped = keyword
+        .replace("#", r#"\\#"#)
+        .replace(".", r#"\\."#)
+        .replace("-", r#"\\-"#);
 
     // send a joined query to ES
     let refs = r#"{"size":0,"aggregations":{"agg":{"terms":{"field":"report.tech.refs.k.keyword","size":50,"include":"(.*\\.)?%.*"}}}}"#;

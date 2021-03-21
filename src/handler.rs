@@ -1,5 +1,5 @@
 use crate::{config::Config, html, Error};
-use lambda::Context;
+use lambda_runtime::Context;
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
