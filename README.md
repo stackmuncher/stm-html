@@ -19,8 +19,8 @@ Create function called `stm-html` with `stm-www` role, a custom runtime and cust
 * async invocation: 1 min (is it even invoked as async, probably redundant?)
 
 ```
-cargo build --release --target x86_64-unknown-linux-musl
-cp ./target/x86_64-unknown-linux-musl/release/stm-html ./bootstrap && zip proxy.zip bootstrap && rm bootstrap
+cargo build --release --target x86_64-unknown-linux-gnu
+cp ./target/x86_64-unknown-linux-gnu/release/stm-html ./bootstrap && zip proxy.zip bootstrap && rm bootstrap
 aws lambda update-function-code --region us-east-1 --function-name stm-html --zip-file fileb://proxy.zip
 ```
 

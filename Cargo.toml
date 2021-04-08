@@ -12,7 +12,7 @@ tokio = { version = "1.0", features = ["full"] }
 tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = "0.2"
 log = "0.4"
-lambda_runtime = { git = "https://github.com/rimutaka/aws-lambda-rust-runtime", branch = "proxy-experiment" }
+lambda_runtime = { git = "https://github.com/awslabs/aws-lambda-rust-runtime.git" }
 hyper = { version = "0.14", features = ["http2"] }
 hyper-rustls = "0.22"
 regex = "1.4"

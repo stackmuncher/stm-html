@@ -24,7 +24,7 @@ async fn main() -> Result<(), Error> {
 
     // call the actual handler of the request
     #[cfg(not(debug_assertions))]
-    return lambda::run(handler_fn(handler::my_handler)).await;
+    return lambda_runtime::run(handler_fn(handler::my_handler)).await;
 }
 
 /// This module is only used for local debugging via SQS and should
