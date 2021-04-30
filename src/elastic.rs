@@ -551,3 +551,36 @@ pub(crate) async fn related_keywords(
 
     Ok(related)
 }
+
+/// Reads the latest N entries from the specified stats index, e.g. stm_stats_dev_job_counts.
+/// Returns the entire response as JSON Value. The index must follow a certain pattern
+/// with the top element the same as the name of the query. Any other format will fail
+/// at Tera transform.
+/// ```json
+/// {
+/// "stm_stats_dev_job_counts" : {
+///     "iso" : "2021-04-29T10:32:17.660423+00:00",
+///     "ts" : 1619692338,
+///     ...
+///   }
+/// }
+/// ```
+/// The name of the IDX is included as a field in the query, but is NOT SANITIZED.
+pub(crate) async fn get_stm_stats(es_url: &String, idx: &str, count: usize) -> Result<Value, ()> {
+    // e.g. GET stm_stats_dev_job_counts/_search
+    let es_api_endpoint = [es_url.as_ref(), "/", idx, "/_search"].concat();
+
+    // insert the index name in the query
+    let query = [
+        r#"{"size":"#,
+        count.to_string().as_str(),
+        r#","query":{"match_all":{}},"sort":[{""#,
+        idx,
+        r#".ts":{"order":"desc"}}]}"#,
+    ]
+    .concat();
+
+    let es_response = call_es_api(es_api_endpoint, Some(query)).await?;
+
+    Ok(es_response)
+}

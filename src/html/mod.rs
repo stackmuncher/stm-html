@@ -9,6 +9,7 @@ mod home;
 mod html_data;
 mod keyword;
 mod related;
+mod stats;
 
 const MAX_NUMBER_OF_VALID_SEARCH_TERMS: usize = 4;
 const MAX_NUMBER_OF_SEARCH_TERMS_TO_CHECK: usize = 6;
@@ -34,6 +35,7 @@ pub(crate) async fn html(
         http_resp_code: 404,
         meta_robots: None,
         login_str: None,
+        stats_jobs: None,
     };
 
     // return 404 for requests that are too long or for some resource related to the static pages
@@ -44,6 +46,12 @@ pub(crate) async fn html(
     if url_path.starts_with("/about/") || url_path.starts_with("/robots.txt") {
         warn!("Static resource request: {}", url_path);
         return Ok(html_data);
+    }
+
+    // is it a stats page?
+    if url_path.trim_end_matches("/") == "/_stats" {
+        // return stats page
+        return Ok(stats::html(config, html_data).await?);
     }
 
     // is it a related keyword search?

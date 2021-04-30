@@ -1,3 +1,4 @@
+use crate::html::stats::Stats;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -34,6 +35,9 @@ pub(crate) struct HtmlData {
     /// e.g. `<meta name="robots" content="noindex">` for `rust+actix` search
     #[serde(skip_serializing_if = "Option::is_none")]
     pub meta_robots: Option<String>,
+    /// A container for job stats data populated for stats page only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stats_jobs: Option<Stats>,
 }
 
 /// A view of the keyword from ElasticSearch
