@@ -210,14 +210,14 @@
             <tr>
               <td scope="row"><strong>{{stat.iso | date(format="%m/%d %H:%M")}}</strong></td>
               <td class="text-end">{{stat.ts}}</td>
-              <td class="text-end">{{stat.r_r10m | round(method="ceil", precision=1)}}</td>
-              <td class="text-end">{{stat.r_r1hr | round(method="ceil", precision=1)}}</td>
-              <td class="text-end">{{stat.r_s2r10m | round(method="ceil")}}</td>
-              <td class="text-end">{{stat.r_s2r1hr | round(method="ceil")}}</td>
-              <td class="text-end">{{stat.d_r10m | round(method="ceil", precision=1)}}</td>
-              <td class="text-end">{{stat.d_r1hr | round(method="ceil", precision=1)}}</td>
-              <td class="text-end">{{stat.d_s2r10m | round(method="ceil")}}</td>
-              <td class="text-end">{{stat.d_s2r1hr | round(method="ceil")}}</td>
+              <td class="text-end">{% if stat.r_r10m %}{{stat.r_r10m | round(method="ceil", precision=1)}}{% endif %}</td>
+              <td class="text-end">{% if stat.r_r1hr %}{{stat.r_r1hr | round(method="ceil", precision=1)}}{% endif %}</td>
+              <td class="text-end">{% if stat.r_s2r10m %}{{stat.r_s2r10m | round(method="ceil")}}{% endif %}</td>
+              <td class="text-end">{% if stat.r_s2r1hr %}{{stat.r_s2r1hr | round(method="ceil")}}{% endif %}</td>
+              <td class="text-end">{% if stat.d_r10m %}{{stat.d_r10m | round(method="ceil", precision=1)}}{% endif %}</td>
+              <td class="text-end">{% if stat.d_r1hr %}{{stat.d_r1hr | round(method="ceil", precision=1)}}{% endif %}</td>
+              <td class="text-end">{% if stat.d_s2r10m %}{{stat.d_s2r10m | round(method="ceil")}}{% endif %}</td>
+              <td class="text-end">{% if stat.d_s2r1hr %}{{stat.d_s2r1hr | round(method="ceil")}}{% endif %}</td>
             </tr>
             {% endfor %}
           </tbody>
