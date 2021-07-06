@@ -143,7 +143,7 @@
         {% endif %}
         {% endfor %}
 
-        {% if user.report.unknown_file_types | length > 0 %}
+        {% if user.report.unknown_file_types %}
         <h3 class="mt-4">Other files</h3>
         <ul class="list-inline">
           {% for ftype in user.report.unknown_file_types | sort(attribute="c") | reverse %}
