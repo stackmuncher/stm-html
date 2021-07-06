@@ -217,6 +217,7 @@ pub(crate) async fn call_es_api(
     let output =
         Ok(serde_json::from_slice::<Value>(&buf).expect("Failed to convert ES resp to JSON"));
     info!("ES query {} finished", payload_id);
+    //info!("{}", output.as_ref().unwrap()); // for debugging
     output
 }
 
