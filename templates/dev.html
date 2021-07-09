@@ -79,6 +79,30 @@
 
         <h3 class="mt-4">Projects</h3>
         <ul class="list-inline">
+          {% if user.report.projects_included %}
+
+          {% for proj in user.report.projects_included | sort(attribute="date_head") | reverse %}
+          {% if proj.loc > 100 %}
+          <li class="pe-4 mb-4 .text-nowrap list-inline-item">
+            <div class="card" style="width: 20rem;">
+              <div class="card-body">
+                <h6 class="card-title"><a href="https://github.com/{{user.login}}/{{proj.project_name}}" title="Lines of code: {{proj.loc}}, libraries: {{proj.libs}}. View the details.">{{proj.project_name | truncate(length=50)}}</a></h5>
+                  <h6 class="card-subtitle mb-2 text-muted">
+                    <span title="Lines of code" class="loc-badge">{{proj.loc}}</span>
+                    <span title="Number of external libraries" class="libs-badge ms-3">{{proj.libs}}</span>
+                    {% if proj.date_init and proj.date_head %}
+                    <span title="Date of the last commit" class="calendar-badge ms-3"><small>{{proj.date_head | date(format="%b %Y")}}</small></span>
+                    {% endif %}
+                  </h6>
+                  <p class="card-text">{{proj.tech | sort(attribute="loc") | reverse | slice(end=3) | map(attribute="language") | join(sep=", ")}}</p>
+              </div>
+            </div>
+          </li>
+          {% endif %}
+          {% endfor %}
+
+          {% else %}
+
           {% for proj in user.report.reports_included | sort %}
           {% set len = proj | length | int() %}
           <li class="pe-4 .text-nowrap list-inline-item">
@@ -87,6 +111,8 @@
             <a href="https://github.com/{{user.login}}/{{pname}}">{{pname}}</a>
           </li>
           {% endfor %}
+
+          {% endif %}
         </ul>
 
         {% for tech in user.report.tech %}
